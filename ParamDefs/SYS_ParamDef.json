@@ -1,0 +1,52 @@
+{
+	"SYS": {
+		"Persist": {
+			"GlobalA": {
+				"Description": "This is the first parameter",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0,
+				"List": "",
+				"FractBits": 0,
+				"DSPConvert": 1
+			},
+			"MyGlobal": {
+				"Description": "And the 2nd global",
+				"UserVisible": 0,
+				"Elements": 1,
+				"UserUnits": "dB",
+				"UserMax": 42.7,
+				"UserMin": -60.3,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.1666
+			}
+		},
+		"Profile": {
+			"LocalParam": {
+				"Description": "The local value",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 1,
+				"UserMin": 0,
+				"List": ["0 = false", "1 = true"],
+				"FractBits": 0,
+				"DSPConvert": "TestConv"
+			},
+			"ArrayParam": {
+				"Description": "Array of parameters",
+				"UserVisible": 1,
+				"Elements": "MAX_NUM",
+				"UserUnits": "",
+				"UserMax": 0.95,
+				"UserMin": -1.0,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "(WHATEVER/6.7)"
+			}				
+		}
+	}
+}

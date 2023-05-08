@@ -1,0 +1,56 @@
+{
+	"SYS": {
+		"0": {
+			"GlobalA": 15,
+			"MyGlobal": 22.7
+		},
+		"1": {
+			"LocalParam": 1,
+			"ArrayParam[0]": -0.6,
+			"ArrayParam[1]": 0.45,
+			"ArrayParam[2]": -0.001,
+			"ArrayParam[3]": 0.87654321
+		},
+		"2": {
+			"LocalParam": 0,
+			"ArrayParam[0]": 0.080604,
+			"ArrayParam[1]": 0.12345,
+			"ArrayParam[2]": -0.99,
+			"ArrayParam[3]": -0.312
+		}
+	},
+	"WDRC": {
+		"0": {
+			"ExpansAtkTC": 35.0,
+			"ExpansRelTC": 120.0,
+			"CompressAtkTC": 50.0,
+			"CompressRelTC": 300.0,
+			"LimitAtkTC": 10.0,
+			"LimitRelTC": 80.0
+		},
+		"1": {
+			"Enable": 1,
+			"Gain[0]": 0.0,
+			"Gain[1]": 6.0,
+			"Gain[2]": 12.0,
+			"Gain[3]": 18.0,
+			"Thresh[0]": 50.0,
+			"Thresh[1]": 56.0,
+			"Thresh[2]": 68.0,
+			"Thresh[3]": 85.0,
+			"ExpSlope": 2.5
+		},
+		"2": {
+			"Enable": 0,
+			"Gain[0]": 0.0,
+			"Gain[1]": -6.0,
+			"Gain[2]": -12.0,
+			"Gain[3]": -18.0,
+			"Thresh[0]": 50.0,
+			"Thresh[1]": 56.0,
+			"Thresh[2]": 68.0,
+			"Thresh[3]": 85.0,
+			"ExpSlope": 2.5
+		}
+	}
+}

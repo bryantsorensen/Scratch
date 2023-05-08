@@ -1,0 +1,38 @@
+{
+	"SYS": {
+		"Persist": {
+			"<Name>": {
+				"Description": "",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 10.0,
+				"UserMin": -10.0,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": ""
+			}
+		},
+		"Profile": {
+		}
+	}
+}
+
+-- Description is a string that can be displayed in GUI to give parameter hint / help
+-- UserVisible is 0 or 1; indicates if visible to audiology fitting SW
+-- Elements tells how many array values there are under this name.  Use 1 for single element, a number or string otherwise
+-- UserMax, UserMin are used instead of telling how many integer bits; also used to tell if signed or unsigned
+-- List can give enum-like names; for bool, set to 0=false, 1=true; for Enable, 0=disabled 1=enabled. Can also give a single value for the step between allowable values, if uniform. Left blank if GUI allows user to type in value.
+	-- When specifying pairs, use '=' with no spaces to separate value and description
+-- FractBits == 0 means integer type
+-- Non-zero FractBits ==> fractional data type
+-- DSPConvert is used to convert the value in parameter preset JSONs, and also for UserMax & UserMin
+-- If DSPConvert is blank, then there is no conversion; direct mapping between User and DSP, same values
+-- DSPConvert gives scale factor if it is a number; DSPValue = UserValue*DSPConvert.  
+-- If DSPConvert is a string, AND it uses braces () around it, it is to be evaluated into a scale factor; otherwise it tells what function to use in conversion script, as in DSPValue = DSPconvert(UserValue)
+
+-- Do we need differentiation between bool and integer? Assume no to start
+
+In C code, parameter is part of a structure.  For example, SYSp.Persist.MyParam
+
+-- All parameters are 24 bits. In the future, we could consider 32b for CM3 parameters

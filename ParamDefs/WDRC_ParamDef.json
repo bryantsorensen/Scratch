@@ -1,0 +1,118 @@
+{
+	"WDRC": {
+		"Persist": {
+			"ExpansAtkTC": {
+				"Description": "Expansion Region Attack Time Constant",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "AnsiTC"
+			},
+			"ExpansRelTC": {
+				"Description": "Expansion Region Release Time Constant",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "AnsiTC"
+			},
+			"CompressAtkTC": {
+				"Description": "Compression Region Attack Time Constant",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "AnsiTC"
+			},
+			"CompressRelTC": {
+				"Description": "Compression Region Release Time Constant",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "AnsiTC"
+			},
+			"LimitAtkTC": {
+				"Description": "Limiting Region Attack Time Constant",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "AnsiTC"
+			},
+			"LimitRelTC": {
+				"Description": "Limiting Region Release Time Constant",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "AnsiTC"
+			}
+		},
+		"Profile": {
+			"Enable": {
+				"Description": "Enable for WDRC module",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 1,
+				"UserMin": 0,
+				"List": ["0 = disabled", "1 = enabled"],
+				"FractBits": 0,
+				"DSPConvert": ""
+			},
+			"Gain": {
+				"Description": "WDRC Regions Gains",
+				"UserVisible": 1,
+				"Elements": 4,
+				"UserUnits": "dB",
+				"UserMax": 63.999,
+				"UserMin": -64.0,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.16666
+			},
+			"Thresh": {
+				"Description": "WDRC Regions Thresholds / Kneepoints",
+				"UserVisible": 1,
+				"Elements": 4,
+				"UserUnits": "dB SPL",
+				"UserMax": 150.0,
+				"UserMin": -20.0,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.16666
+			},
+			"ExpSlope": {
+				"Description": "WDRC Expansion Region Slope",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "dB/dB",
+				"UserMax": 60.0,
+				"UserMin": -60.0,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.16666
+			}			
+		}
+	}
+}
