@@ -1,0 +1,1 @@
+This repository is a test of using GitHub. It is also a temporary backup of development files while waiting for SDK licenses.
