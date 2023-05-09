@@ -1,9 +1,12 @@
 Fxp_C_Model/x64/*
 Fxp_C_Model/.vs/*
+Fxp_C_Model/Debug/*
+*.map
 Scripts/.idea/*
 Scripts/__pycache__/*
 Scripts/Scripts.iml
 
-Fxp_C_Model/whitenoise_3s.wav
+Fxp_C_Model/*.wav
+Fxp_C_Model/FW_Param_Init.cpp
 
 Shared/include/*_ParamStruct.h

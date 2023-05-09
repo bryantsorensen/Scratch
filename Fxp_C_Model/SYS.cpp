@@ -40,23 +40,25 @@ int24_t i;
 
     for (i = 0; i < BLOCK_SIZE; i++)
     {
-        SYS.FwdAnaIn[i] = 0;
-        SYS.FwdSynOut[i] = 0;
-        SYS.RevAnaIn[i] = 0;
+        SYS.FwdAnaIn[i] = to_frac24(0);
+        SYS.FwdSynOut[i] = to_frac24(0);
+        SYS.OutBuf[i] = to_frac24(0);
+        SYS.RevAnaIn[i] =to_frac24(0);
     }
 
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
-        SYS.FwdAnaBuf[i] = to_frac24(0);
-        SYS.Error[i] = to_frac24(0);   // sets imag to 0 also
+        SYS.FwdAnaBuf[i] = to_frac24(0);    // Complex, both parts set to 0
+        SYS.Error[i] = to_frac24(0);        // Complex, both parts set to 0
         SYS.BinEnergy[i] = to_frac48(0);
-        SYS.FwdGainLog2[i] = to_frac16(0);     // Unity gain
-        SYS.FwdSynBuf[i] = to_frac24(0);
+        SYS.FwdGainLog2[i] = to_frac16(0);  // Unity gain
+        SYS.FwdSynBuf[i] = to_frac24(0);    // Complex, both parts set to 0
 
         SYS.RevAnaBuf[i] = to_frac24(0);
     }
 
-    SYS.AgcoLevel = 0;
+    SYS.AgcoLevelLog2 = to_frac16(-40.0);
+    SYS.AgcoGainLog2 = to_frac16(0.0);
 
 }
 
@@ -156,14 +158,22 @@ int24_t i;
 void SYS_FENG_AgcO()
 {
 int24_t i;
-    
+frac24_t TC;
+frac16_t Diff;
+frac16_t LevelLog2;
+
     for (i = 0; i < BLOCK_SIZE; i++)
     {
-        (abs_f24(SYS.FwdSynOut[i]) - SYS.AgcoLevel) + SYS.AgcoLevel;
-        if (SYS.AgcoLevel > SYS_Params.Persist.AgcoThresh)
-
+        LevelLog2 = log2_approx(abs_f24(SYS.FwdSynOut[i]));
+        Diff = LevelLog2 - SYS.AgcoLevelLog2;
+        TC = (Diff > 0) ? AGCO_ATK_TC : AGCO_REL_TC;
+        SYS.AgcoLevelLog2 = rnd_sat24(TC*Diff) + SYS.AgcoLevelLog2;
+        if ((SYS.AgcoLevelLog2+SYS_Params.Profile.AgcoGain) > SYS_Params.Persist.AgcoThresh)
+            SYS.AgcoGainLog2 = SYS_Params.Persist.AgcoThresh - SYS.AgcoLevelLog2;
+        else
+            SYS.AgcoGainLog2 = SYS_Params.Profile.AgcoGain;
+        SYS.OutBuf[i] = mult_log2(SYS.FwdSynOut[i], SYS.AgcoGainLog2);
     }
-        SYS.OutBuf[i] = ;
 }
 
 

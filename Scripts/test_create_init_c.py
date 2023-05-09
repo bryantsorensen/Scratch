@@ -12,6 +12,6 @@ c_code_dir = os.path.join(repository_dir, 'Fxp_C_Model')
 
 param_val_fname = os.path.join(param_vals_dir, 'ParamValsTest.json')
 profile_num = '1'
-out_fname = os.path.join(c_code_dir, 'FW_Param_Init.c')
+out_fname = os.path.join(c_code_dir, 'FW_Param_Init.cpp')
 
 ic.create_param_init_c_code(param_val_fname, profile_num, param_defs_dir, out_fname)

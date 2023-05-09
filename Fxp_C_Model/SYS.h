@@ -12,6 +12,9 @@
 #ifndef _SYS_H
 #define _SYS_H
 
+#define     AGCO_ATK_TC     (1.0/32.0)      // TODO: Convert to fixed point
+#define     AGCO_REL_TC     (1.0/512.0)
+
 struct strSYS
 {
     frac24_t    FwdAnaIn[BLOCK_SIZE];
@@ -22,7 +25,8 @@ struct strSYS
     Complex24   FwdSynBuf[WOLA_NUM_BINS];
     frac24_t    FwdSynOut[BLOCK_SIZE];
     frac24_t    OutBuf[BLOCK_SIZE];
-    frac24_t    AgcoLevel;
+    frac16_t    AgcoLevelLog2;
+    frac16_t    AgcoGainLog2;
 
     frac24_t    RevAnaIn[BLOCK_SIZE];
     Complex24   RevAnaBuf[WOLA_NUM_BINS];

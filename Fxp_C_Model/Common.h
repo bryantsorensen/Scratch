@@ -135,6 +135,15 @@ double gain = pow(2.0, g);
     return ret;
 }
 
+inline frac24_t abs_f24 (frac24_t a)
+{
+frac24_t ret;
+
+    ret = (a < 0) ? -a : a;
+    return ret;
+}
+
+
 #include "Complex24Class.h"
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

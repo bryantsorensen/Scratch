@@ -34,7 +34,7 @@ strParams_SYS   SYS_Params;
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Main function. Drives simulation, calls all modules
 
-#include "FW_Param_Init.c"      // Include init routine code here. Don't want to add Common.h to auto-generated init code, as this may vary by project
+#include "FW_Param_Init.cpp"      // Include init routine code here. Don't want to add Common.h to auto-generated init code, as this may vary by project
 
 int main (int argc, char* argv[])
 {
