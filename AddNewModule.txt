@@ -1,0 +1,32 @@
+MODULARITY:  To add new module
+
+-- Module abbreviation uses all caps, is 3-5 letters, and is unique from other modules
+
+1. Create module .h and .cpp file
+-- Header contains structure named str<Module>. Example names: strWDRC, strSYS. This structure is the module's local memory; some variables might be shared to interconnect with other modules
+-- Header contains all #defines local to that module
+-- Header contains prototypes of functions found in <module>.cpp file
+-- CPP file contains void <Module>_Init() and any processing functions needed; all with prefix <Module>_
+-- CPP files uses #include "Common.h"
+
+2. Create parameter definition JSON file for module in $\ParamDefs: <Module>_ParamDef.json
+
+3. Re-run script $\Scripts\convert_param_json_to_c_structs.py.  This will read the ParamDef JSON file and create a header file in $\Shared\include\<Module>_ParamStruct.h
+
+4. Add parameter initialization, in user / audiology units, to the parameter init JSON file found in $\ParamVals
+
+5. As part of building code, execute a script which calls $\Scripts\create_param_init_c_code.py. This creates a file $\Fxp_C_Model\FW_Param_Init.c with code that initializes all the modules' parameter structures
+
+6. Add module header files to Common.h
+-- Add #include "<Module>.h" next to those of other modules
+-- Add #include "<Module>_ParamStruct.h" next to those of other modules
+
+7. Add instantiation of module structure as a global variable in TopLevel.cpp: str<Module> <Module>;
+8. Add instantiation of module parameter structure variable in TopLevel.cpp: strParams_<Module> <Module>_Params;
+
+9. Add reference to module structure variable in Common.h:  extern str<Module> <Module>;
+10. Add reference to module param struct var in Common.h: extern strParams_<Module> <Module>_Params;
+
+11. In TopLevel.cpp, call <Module>_Init() before the main processing loop and next to the other modules' init functions
+-- If the module init depends on other modules' init functions, put it in proper order AND add comments in the code, next to the init function, that the order is necessary
+12. In TopLevel.cpp, call the other module processing functions in the main processing loop (foreground loop)

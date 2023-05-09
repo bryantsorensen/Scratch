@@ -37,6 +37,8 @@ typedef double frac48_t;
 #define     MAX_VAL16       (127.9999847412109375)         // 0x7F.FFFF along binary point split
 #define     MIN_VAL16       (-128.0)                       // 0x80.0000 along binary point split
 
+#define     MAX_VAL48       (1.0 - 7.1054273576e-15)
+#define     MIN_VAL48       (-1.0)
 
 // TODO: Replace these double-precision functions with functions for fixed-point types
 inline frac16_t rnd_sat16(accum_t a)
@@ -46,7 +48,6 @@ frac16_t ret;
     ret = (a > MAX_VAL16) ? MAX_VAL16 : a;
     ret = (ret < MIN_VAL16) ? MIN_VAL16 : ret;
     return ret;
-
 }
 
 inline frac24_t rnd_sat24(accum_t a)
@@ -56,7 +57,25 @@ frac24_t ret;
     ret = (a > MAX_VAL24) ? MAX_VAL24 : a;
     ret = (ret < MIN_VAL24) ? MIN_VAL24 : ret;
     return ret;
+}
 
+
+inline frac48_t sat48(accum_t a)
+{
+frac48_t ret;
+
+    ret = (a > MAX_VAL48) ? MAX_VAL48 : a;
+    ret = (ret < MIN_VAL48) ? MIN_VAL48 : ret;
+    return ret;
+}
+
+
+inline frac48_t to_frac48(double a)
+{
+frac48_t ret;
+
+    ret = sat48(a);
+    return ret;
 }
 
 
@@ -107,11 +126,29 @@ frac16_t ret;
 }
 
 
+inline accum_t mult_log2(frac24_t a, frac16_t g)
+{
+accum_t ret;
+double gain = pow(2.0, g);
+
+    ret = a * gain;
+    return ret;
+}
+
+#include "Complex24Class.h"
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Definitions common across modules
+#define     BLOCK_SIZE      8
+
+#define     WOLA_LA         64
+#define     WOLA_LS         64
 #define     WOLA_N          64
 #define     WOLA_NUM_BINS   (WOLA_N/2)
-#define     WOLA_R          8
+#define     WOLA_R          BLOCK_SIZE
+#define     WOLA_STACKING_EVEN  0
+#define     WOLA_STACKING_ODD   1
+#define     WOLA_STACKING   WOLA_STACKING_EVEN
 
 #define     MAX_NUM         4       // TODO: This is a junk test value, remove
 
@@ -121,16 +158,18 @@ frac16_t ret;
 #include "SYS_ParamStruct.h"
 #include "WDRC_ParamStruct.h"
 
-extern strParams_WDRC   WDRC_Params;
 extern strParams_SYS    SYS_Params;
+extern strParams_WDRC   WDRC_Params;
+
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Include module headers, declare globals
 
-#include "Complex24Class.h"
 #include "wola.h"
+#include "SYS.h"
 #include "WDRC.h"
 
+extern strSYS  SYS;
 extern strWDRC WDRC; 
 
 void FW_Param_Init();

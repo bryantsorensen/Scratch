@@ -1,52 +1,52 @@
 {
 	"SYS": {
 		"Persist": {
-			"GlobalA": {
-				"Description": "This is the first parameter",
+			"InpMicGain": {
+				"Description": "Input Microphone calibration digital gain",
 				"UserVisible": 1,
-				"Elements": 1,
-				"UserUnits": "ms",
-				"UserMax": 10000,
-				"UserMin": 0,
-				"List": "",
-				"FractBits": 0,
-				"DSPConvert": 1
-			},
-			"MyGlobal": {
-				"Description": "And the 2nd global",
-				"UserVisible": 0,
 				"Elements": 1,
 				"UserUnits": "dB",
-				"UserMax": 42.7,
-				"UserMin": -60.3,
+				"UserMax": 63.999,
+				"UserMin": -64.0,
 				"List": "",
 				"FractBits": 16,
-				"DSPConvert": 0.1666
-			}
-		},
-		"Profile": {
-			"LocalParam": {
-				"Description": "The local value",
+				"DSPConvert": 0.166096404744368
+			},
+			"AgcoThresh": {
+				"Description": "Output AGC Limiter Threshold",
 				"UserVisible": 1,
 				"Elements": 1,
-				"UserUnits": "",
-				"UserMax": 1,
-				"UserMin": 0,
-				"List": ["0 = false", "1 = true"],
-				"FractBits": 0,
-				"DSPConvert": "TestConv"
-			},
-			"ArrayParam": {
-				"Description": "Array of parameters",
-				"UserVisible": 1,
-				"Elements": "MAX_NUM",
-				"UserUnits": "",
-				"UserMax": 0.95,
-				"UserMin": -1.0,
+				"UserUnits": "dB",
+				"UserMax": 130.0,
+				"UserMin": -20.0,
 				"List": "",
-				"FractBits": 23,
-				"DSPConvert": "(WHATEVER/6.7)"
+				"FractBits": 16,
+				"DSPConvert": 0.166096404744368
+			},
+			"OutpRcvrGain": {
+				"Description": "Output Receiver Calibration digital gain",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "dB",
+				"UserMax": 63.999,
+				"UserMin": -64.0,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.166096404744368
 			}				
+		},
+		"Profile": {
+			"AgcoGain": {
+				"Description": "Output AGC Limiter Gain",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "dB",
+				"UserMax": 63.999,
+				"UserMin": -64.0,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.166096404744368
+			}
 		}
 	}
 }

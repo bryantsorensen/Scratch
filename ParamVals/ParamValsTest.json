@@ -1,22 +1,15 @@
 {
 	"SYS": {
 		"0": {
-			"GlobalA": 15,
-			"MyGlobal": 22.7
+			"InpMicGain": 2.0,
+			"AgcoThresh": 105.0,
+			"OutpRcvrGain": 0.0
 		},
 		"1": {
-			"LocalParam": 1,
-			"ArrayParam[0]": -0.6,
-			"ArrayParam[1]": 0.45,
-			"ArrayParam[2]": -0.001,
-			"ArrayParam[3]": 0.87654321
+			"AgcoGain": 10.0
 		},
 		"2": {
-			"LocalParam": 0,
-			"ArrayParam[0]": 0.080604,
-			"ArrayParam[1]": 0.12345,
-			"ArrayParam[2]": -0.99,
-			"ArrayParam[3]": -0.312
+			"AgcoGain": 6.0
 		}
 	},
 	"WDRC": {

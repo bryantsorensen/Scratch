@@ -112,6 +112,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>wola.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -133,13 +134,14 @@
   <ItemGroup>
     <ClInclude Include="Common.h" />
     <ClInclude Include="Complex24Class.h" />
+    <ClInclude Include="SYS.h" />
     <ClInclude Include="WAV_Utils.h" />
     <ClInclude Include="WDRC.h" />
     <ClInclude Include="wola.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="FW_Param_Init.c" />
     <ClCompile Include="getopt.cpp" />
+    <ClCompile Include="SYS.cpp" />
     <ClCompile Include="TopLevel.cpp" />
     <ClCompile Include="WAV_Utils.cpp" />
     <ClCompile Include="WDRC.cpp" />

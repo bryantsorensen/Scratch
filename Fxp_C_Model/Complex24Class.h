@@ -43,6 +43,9 @@ public:
 		return *this;
 	}
 	
+    inline void SetReal(frac24_t a) { r = a; }
+    inline void SetImag(frac24_t a) { i = a; }
+    inline void SetVal(frac24_t ar, frac24_t ai) { r = ar; i = ai; }
 	inline frac24_t Real(void) { return r; }
 	inline frac24_t Imag(void) { return i; }
 

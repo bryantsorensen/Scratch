@@ -89,7 +89,7 @@
 				"UserMin": -64.0,
 				"List": "",
 				"FractBits": 16,
-				"DSPConvert": 0.16666
+				"DSPConvert": 0.166096404744368
 			},
 			"Thresh": {
 				"Description": "WDRC Regions Thresholds / Kneepoints",
@@ -100,7 +100,7 @@
 				"UserMin": -20.0,
 				"List": "",
 				"FractBits": 16,
-				"DSPConvert": 0.16666
+				"DSPConvert": 0.166096404744368
 			},
 			"ExpSlope": {
 				"Description": "WDRC Expansion Region Slope",
@@ -111,7 +111,7 @@
 				"UserMin": -60.0,
 				"List": "",
 				"FractBits": 16,
-				"DSPConvert": 0.16666
+				"DSPConvert": 0.166096404744368
 			}			
 		}
 	}

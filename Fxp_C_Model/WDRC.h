@@ -68,6 +68,8 @@ struct strWDRC
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Function prototypes
 
+void WDRC_Init();
+void WDRC_Main(frac48_t* BinEnergy);
 
 #endif _WDRC_H
 

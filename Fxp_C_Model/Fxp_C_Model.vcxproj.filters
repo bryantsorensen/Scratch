@@ -30,6 +30,9 @@
     <ClInclude Include="WDRC.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SYS.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TopLevel.cpp">
@@ -44,7 +47,7 @@
     <ClCompile Include="WDRC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FW_Param_Init.c">
+    <ClCompile Include="SYS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
