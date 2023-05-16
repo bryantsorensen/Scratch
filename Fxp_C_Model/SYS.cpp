@@ -34,32 +34,41 @@ static void SYS_SimWolaInit()
 void SYS_Init()
 {
 int24_t i;
+int24_t tap;
 
     // SIM ONLY! Normally done by compile-time config for HEAR code
     SYS_SimWolaInit();
+
+    SYS.MicCalGainLog2 = SYS_Params.Persist.InpMicGain;     // TODO: If we need to ramp gain, do it using this SYS variable
 
     for (i = 0; i < BLOCK_SIZE; i++)
     {
         SYS.FwdAnaIn[i] = to_frac24(0);
         SYS.FwdSynOut[i] = to_frac24(0);
         SYS.OutBuf[i] = to_frac24(0);
-        SYS.RevAnaIn[i] =to_frac24(0);
+        SYS.RevAnaIn[i] = to_frac24(0);
     }
 
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
         SYS.FwdAnaBuf[i] = to_frac24(0);    // Complex, both parts set to 0
+        SYS.MicEnergy[i] = to_frac48(0);
         SYS.Error[i] = to_frac24(0);        // Complex, both parts set to 0
         SYS.BinEnergy[i] = to_frac48(0);
         SYS.FwdGainLog2[i] = to_frac16(0);  // Unity gain
         SYS.FwdSynBuf[i] = to_frac24(0);    // Complex, both parts set to 0
 
-        SYS.RevAnaBuf[i] = to_frac24(0);
+        for (tap = 0; tap < NUM_FBC_ANA_TAPS; tap++)
+            SYS.RevAnaBuf[i][tap] = to_frac24(0);
+
+        SYS.RevEnergy[i] = to_frac48(0);
     }
+    
+    for (i = 0; i < MAX_REV_DELAY; i++)
+        SYS.RevDelayBuf[i] = to_frac24(0);
 
     SYS.AgcoLevelLog2 = to_frac16(-40.0);
-    SYS.AgcoGainLog2 = to_frac16(0.0);
-
+    SYS.AgcoGainLog2 = SYS_Params.Profile.AgcoGain;
 }
 
 
@@ -79,6 +88,7 @@ void SYS_HEAR_WolaFwdAnalysis()
 {
 WolaComplex AnaOut[WOLA_N];
 int24_t i;
+frac24_t Ar, Ai;
 
     WolaAnalyze(WOLASim.FwdWolaHandle, SYS.FwdAnaIn, AnaOut);     // Ignoring return value
 
@@ -87,7 +97,9 @@ int24_t i;
 
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
-        SYS.FwdAnaBuf[i].SetVal(to_frac24(AnaOut[i].r), to_frac24(AnaOut[i].i));  // In case we need conversion, WolaComplex --> Complex24, for sim
+        Ar = to_frac24(AnaOut[i].r);    Ai = to_frac24(AnaOut[i].i);
+        SYS.MicEnergy[i] = sat48(Ar*Ar + Ai*Ai);
+        SYS.FwdAnaBuf[i].SetVal(Ar, Ai);  // In case we need conversion, WolaComplex --> Complex24, for sim
     }   
     
 }
@@ -97,15 +109,29 @@ void SYS_HEAR_WolaRevAnalysis()
 {
 WolaComplex AnaOut[WOLA_N];
 int24_t i;
+int24_t dp;     // Delay pointer
+frac24_t Ar, Ai;
+
+// TODO: Correctly emulate delay buffer
+    for (i = 0, dp = SYS.RevDlyPtr; i < BLOCK_SIZE; i++)
+    {
+        SYS.RevDelayBuf[i] = SYS.OutBuf[i];
+        SYS.RevAnaIn[i] = SYS.RevDelayBuf[dp];
+        dp = (dp + 1) & (MAX_REV_DELAY-1);      // increment delay pointer, modulo max delay
+    }
+    SYS.RevDlyPtr = dp;
 
     WolaAnalyze(WOLASim.RevWolaHandle, SYS.RevAnaIn, AnaOut);     // Ignoring return value
 
     if (WOLA_STACKING == WOLA_STACKING_EVEN)
         AnaOut[0].i = 0.0;                  // Clear out Nyquist frequency to simplify things for Even stacking
 
+// TODO: Correctly emulate analysis buffer
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
-        SYS.RevAnaBuf[i].SetVal(to_frac24(AnaOut[i].r), to_frac24(AnaOut[i].i));  // In case we need conversion, WolaComplex --> Complex24, for sim
+        Ar = to_frac24(AnaOut[i].r);    Ai = to_frac24(AnaOut[i].i);
+        SYS.RevAnaBuf[0][i].SetVal(Ar, Ai);    // In case we need conversion, WolaComplex --> Complex24, for sim
+        SYS.RevEnergy[i] = sat48(Ar*Ar + Ai*Ai);
     }   
     
 }
@@ -113,11 +139,16 @@ int24_t i;
 void SYS_HEAR_ErrorSubAndEnergy(Complex24* FBC_FilterOut)
 {
 int24_t i;
+frac24_t Er, Ei;
 
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
-        SYS.Error[i] = SYS.FwdAnaBuf[i] - FBC_FilterOut[i];
-        SYS.BinEnergy[i] = sat48((SYS.Error[i].Real()*SYS.Error[i].Real()) + (SYS.Error[i].Imag()*SYS.Error[i].Imag()));
+        if (FBC_Params.Profile.Enable)
+            SYS.Error[i] = SYS.FwdAnaBuf[i] - FBC_FilterOut[i];
+        else
+            SYS.Error[i] = SYS.FwdAnaBuf[i];
+        Er = SYS.Error[i].Real();   Ei = SYS.Error[i].Imag();
+        SYS.BinEnergy[i] = sat48(Er*Er + Ei*Ei);
     }
 
 }
@@ -130,11 +161,15 @@ int24_t i;
 
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
-        BinGainLog2 = 0.0;  // EQ.BinGainLog2[i] + WDRC.BinGainLog2[i] + NR.BinGainLog2[i] + FilterbankGainLog2
-        //BinGainLog2 = min(BinGainLog2, FBC.GainLimitLog2[i]);
+    // TODO: Add in NR gain
+        BinGainLog2 = WDRC.BinGainLog2[i]; // + NR.BinGainLog2[i];
+        SYS.DynamicGainLog2[i] = BinGainLog2;    // for use in FBC mu mod by gain
+    // TODO: Add EQ, filterbank gains
+//        BinGainLog2 += EQ.BinGainLog2[i] + FILTERBANK_GAIN_LOG2;
+        BinGainLog2 = min16(BinGainLog2, FBC.GainLimLog2[i]);
+        SYS.LimitedFwdGain[i] = BinGainLog2;        // For debugging
         SYS.FwdSynBuf[i].SetReal(rnd_sat24(mult_log2(SYS.Error[i].Real(), BinGainLog2)));
         SYS.FwdSynBuf[i].SetImag(rnd_sat24(mult_log2(SYS.Error[i].Imag(), BinGainLog2)));
-        SYS.FwdGainLog2[i] = BinGainLog2;   // For debugging
     }
 
 }
@@ -161,6 +196,8 @@ int24_t i;
 frac24_t TC;
 frac16_t Diff;
 frac16_t LevelLog2;
+
+// TODO: Add VC gain, EQ BB gain
 
     for (i = 0; i < BLOCK_SIZE; i++)
     {

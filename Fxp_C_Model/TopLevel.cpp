@@ -22,6 +22,7 @@ using namespace std;
 
 strWDRC WDRC;
 strSYS  SYS;
+strFBC  FBC;
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -29,6 +30,7 @@ strSYS  SYS;
 
 strParams_WDRC  WDRC_Params;
 strParams_SYS   SYS_Params;
+strParams_FBC   FBC_Params;
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -108,6 +110,7 @@ for (k = 0; k < WOLA_NUM_BINS; k++)
 // Initialize all modules
     SYS_Init();
     WDRC_Init();
+    FBC_Init();     // NOTE: FBC_Init MUST be called after WDRC_Init in order to capture correct target gains
 
 // Do simulation, going through all blocks
     for (i = 0; i < Blocks; i++)

@@ -83,7 +83,7 @@
 			"Gain": {
 				"Description": "WDRC Regions Gains",
 				"UserVisible": 1,
-				"Elements": 4,
+				"Elements": "[NUM_WDRC_CHANNELS][4]",
 				"UserUnits": "dB",
 				"UserMax": 63.999,
 				"UserMin": -64.0,
@@ -94,7 +94,7 @@
 			"Thresh": {
 				"Description": "WDRC Regions Thresholds / Kneepoints",
 				"UserVisible": 1,
-				"Elements": 4,
+				"Elements": "[NUM_WDRC_CHANNELS][4]",
 				"UserUnits": "dB SPL",
 				"UserMax": 150.0,
 				"UserMin": -20.0,
@@ -105,7 +105,7 @@
 			"ExpSlope": {
 				"Description": "WDRC Expansion Region Slope",
 				"UserVisible": 1,
-				"Elements": 1,
+				"Elements": "[NUM_WDRC_CHANNELS]",
 				"UserUnits": "dB/dB",
 				"UserMax": 60.0,
 				"UserMin": -60.0,

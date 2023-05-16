@@ -67,7 +67,12 @@ for file in os.listdir(param_json_dir):
                     if NumElements != 1:    # If array, Elements is not 1, so tack onto end of param declaration
                         if isinstance(NumElements, int):    # if element value is integer, convert to string
                             NumElements = str(NumElements)
-                        param = param + '[' + NumElements + ']'
+                            param = param + '[' + NumElements + ']'
+                        elif isinstance(NumElements, str):
+                            if '[' in NumElements:      # if already have braces
+                                param = param + NumElements
+                            else:
+                                param = param + '[' + NumElements + ']'
                     filestr = filestr + '    ' + ptype + '    ' + param + ';\n'
                 filestr = filestr + '};\n\n'
         # Top level structure

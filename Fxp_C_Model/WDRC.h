@@ -18,8 +18,6 @@
 // Set up these values at build time
 #define     NUM_WDRC_REGIONS        5       // 5 regions of WDRC action: expansion, lower compress, middle compress, upper compress, limiting
 
-#define     NUM_WDRC_CHANNELS       8
-
 #define     WDRC_SIZE_CHAN_0        1
 #define     WDRC_SIZE_CHAN_1        2
 #define     WDRC_SIZE_CHAN_2        2
@@ -55,9 +53,9 @@ struct strWDRC
     const int24_t     ChannelLastBin[NUM_WDRC_CHANNELS];
 
 // WDRC working values
-    frac16_t    Gain[NUM_WDRC_REGIONS];
-    frac16_t    Thresh[NUM_WDRC_REGIONS];
-    frac16_t    Slope[NUM_WDRC_REGIONS];
+    frac16_t    Gain[NUM_WDRC_CHANNELS][NUM_WDRC_REGIONS];
+    frac16_t    Thresh[NUM_WDRC_CHANNELS][NUM_WDRC_REGIONS];
+    frac16_t    Slope[NUM_WDRC_CHANNELS][NUM_WDRC_REGIONS];
 
     strWDRC();              // Treating struct as public class; make constructor and destructor
     ~strWDRC() {};

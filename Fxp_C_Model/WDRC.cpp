@@ -40,28 +40,31 @@ uint8_t i;
         WDRC.BinGainLog2[i] = 0;
 
 // Convert parameters to working values
-    WDRC.Gain[0] = WDRC_Params.Profile.Gain[0];
-    WDRC.Gain[1] = WDRC_Params.Profile.Gain[1];
-    WDRC.Gain[2] = WDRC_Params.Profile.Gain[2];
-    WDRC.Gain[3] = WDRC_Params.Profile.Gain[3];
+    for (i = 0; i < NUM_WDRC_CHANNELS; i++)
+    {
+        WDRC.Gain[i][0] = WDRC_Params.Profile.Gain[i][0];
+        WDRC.Gain[i][1] = WDRC_Params.Profile.Gain[i][1];
+        WDRC.Gain[i][2] = WDRC_Params.Profile.Gain[i][2];
+        WDRC.Gain[i][3] = WDRC_Params.Profile.Gain[i][3];
 
-    WDRC.Thresh[0] = WDRC_Params.Profile.Thresh[0];
-    WDRC.Thresh[1] = WDRC_Params.Profile.Thresh[1];
-    WDRC.Thresh[2] = WDRC_Params.Profile.Thresh[2];
-    WDRC.Thresh[3] = WDRC_Params.Profile.Thresh[3];
-    WDRC.Thresh[4] = MAX_VAL16;     // Upper numeric limit
+        WDRC.Thresh[i][0] = WDRC_Params.Profile.Thresh[i][0];
+        WDRC.Thresh[i][1] = WDRC_Params.Profile.Thresh[i][1];
+        WDRC.Thresh[i][2] = WDRC_Params.Profile.Thresh[i][2];
+        WDRC.Thresh[i][3] = WDRC_Params.Profile.Thresh[i][3];
+        WDRC.Thresh[i][4] = MAX_VAL16;     // Upper numeric limit
 
-//    Slope[N] = (Gain[N] - Gain[N-1])/(Thresh[N] - Thresh[N-1])
-// TODO: Replace these divides by fixed-point iterative approximations
+    //    Slope[N] = (Gain[N] - Gain[N-1])/(Thresh[N] - Thresh[N-1])
+    // TODO: Replace these divides by fixed-point iterative approximations
 
-    WDRC.Slope[0] = WDRC_Params.Profile.ExpSlope;       // Start with expansion slope
-    WDRC.Slope[1] = (WDRC.Gain[1] - WDRC.Gain[0])/(WDRC.Thresh[1] - WDRC.Thresh[0]);
-    WDRC.Slope[1] = (WDRC.Gain[2] - WDRC.Gain[1])/(WDRC.Thresh[2] - WDRC.Thresh[1]);
-    WDRC.Slope[1] = (WDRC.Gain[3] - WDRC.Gain[2])/(WDRC.Thresh[3] - WDRC.Thresh[2]);
-    WDRC.Slope[4] = to_frac16(-1.0);        // Always fixed at -1.0 for limiting
+        WDRC.Slope[i][0] = WDRC_Params.Profile.ExpSlope[i];       // Start with expansion slope
+        WDRC.Slope[i][1] = (WDRC.Gain[i][1] - WDRC.Gain[i][0])/(WDRC.Thresh[i][1] - WDRC.Thresh[i][0]);
+        WDRC.Slope[i][1] = (WDRC.Gain[i][2] - WDRC.Gain[i][1])/(WDRC.Thresh[i][2] - WDRC.Thresh[i][1]);
+        WDRC.Slope[i][1] = (WDRC.Gain[i][3] - WDRC.Gain[i][2])/(WDRC.Thresh[i][3] - WDRC.Thresh[i][2]);
+        WDRC.Slope[i][4] = to_frac16(-1.0);        // Always fixed at -1.0 for limiting
 
     // Now finish Gain4 calc, knowing that Slope4 = -1
-    WDRC.Gain[4] = (WDRC.Thresh[3] - WDRC.Thresh[4]) + WDRC.Gain[3];  // WDRC.Slope[4]*(WDRC.Thresh[4] - WDRC.Thresh[3]) + WDRC.Gain[3];
+        WDRC.Gain[i][4] = (WDRC.Thresh[i][3] - WDRC.Thresh[i][4]) + WDRC.Gain[i][3];  // WDRC.Slope[4]*(WDRC.Thresh[4] - WDRC.Thresh[3]) + WDRC.Gain[3];
+    }
 
 }
 
@@ -94,8 +97,8 @@ int24_t i;
         ChanEnergyLog2 = log2_approx(Acc);
 
         LevelDiff = ChanEnergyLog2 - WDRC.LevelLog2[CurCh];
-        Diff0 = ChanEnergyLog2 - WDRC.Thresh[0];
-        Diff3 = ChanEnergyLog2 - WDRC.Thresh[3];
+        Diff0 = ChanEnergyLog2 - WDRC.Thresh[CurCh][0];
+        Diff3 = ChanEnergyLog2 - WDRC.Thresh[CurCh][3];
         WDRC.ChanEnergyLog2[CurCh] = ChanEnergyLog2;        // Save for debug
         if (LevelDiff > 0)      // Input level is greater than current level --> attacking
         {
@@ -122,11 +125,11 @@ int24_t i;
     // Loop through regions until we find where level is below the region's threshold
         for (i = 0; i <= 4; i++)
         {
-            DiffThr = WDRC.LevelLog2[CurCh] - WDRC.Thresh[i];
+            DiffThr = WDRC.LevelLog2[CurCh] - WDRC.Thresh[CurCh][i];
             if (DiffThr <= 0)
             {
-                Slope = WDRC.Slope[i];
-                Gain = WDRC.Gain[i];
+                Slope = WDRC.Slope[CurCh][i];
+                Gain = WDRC.Gain[CurCh][i];
                 break;      // get out of 'for' loop
             }
         }
@@ -143,5 +146,10 @@ int24_t i;
         {
             WDRC.CurrentChannel = 0;
         }
+    }
+    else
+    {
+        for (i = 0; i < WOLA_NUM_BINS; i++)
+            WDRC.BinGainLog2[i] = to_frac16(0);     // If WDRC not enabled, use unity gain
     }
 }

@@ -1,0 +1,140 @@
+{
+	"FBC": {
+		"Persist": {
+			"LeakFast": {
+				"Description": "Fast Leakage Right Shift Count (smaller = more leakage)",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 23,
+				"UserMin": 0,
+				"List": "",
+				"FractBits": 0,
+				"DSPConvert": ""
+			},
+			"LeakSlow": {
+				"Description": "Slow Leakage Right Shift Count (smaller = more leakage)",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 23,
+				"UserMin": 1,
+				"List": "",
+				"FractBits": 0,
+				"DSPConvert": ""
+			},
+			"BulkDelay": {
+				"Description": "Bulk delay on output signal fed back to FBC algorithm",
+				"UserVisible": 0,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10,
+				"UserMin": 0.1,
+				"List": "",
+				"FractBits": 0,
+				"DSPConvert": "(BB_SAMPLE_RATE/1000.0)"
+			},
+			"MuOffset": {
+				"Description": "Offset per bin for mu adapt speed. Make larger to slow down adaptation for that bin.",
+				"UserVisible": 0,
+				"Elements": 64,
+				"UserUnits": "",
+				"UserMax": 23,
+				"UserMin": 0,
+				"List": "",
+				"FractBits": 0,
+				"DSPConvert": ""
+			}
+		},
+		"Profile": {
+			"Enable": {
+				"Description": "Enable for FBC module",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 1,
+				"UserMin": 0,
+				"List": ["0 = disabled", "1 = enabled"],
+				"FractBits": 0,
+				"DSPConvert": ""
+			},
+			"ActiveShift": {
+				"Description": "Right Shift Count for nominal FBC adaptation",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 23,
+				"UserMin": -4,
+				"List": "",
+				"FractBits": 0,
+				"DSPConvert": ""
+			},
+			"CosInit": {
+				"Description": "Cosine initialization for frequency shift = cos(2*pi*freq/fs). Frequency must match sine init. Also acts as resonant BQ coeff",
+				"UserVisible": 0,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 1.0,
+				"UserMin": -1.0,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": ""
+			},
+			"SineInit": {
+				"Description": "Sine initialization for frequency shift = sin(2*pi*freq/fs). Frequency must match cos init",
+				"UserVisible": 0,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 1.0,
+				"UserMin": -1.0,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": ""
+			},
+			"FreqShStartBin": {
+				"Description": "Starting bin for applying frequency shift",
+				"UserVisible": 0,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 63,
+				"UserMin": 0,
+				"List": "",
+				"FractBits": 0,
+				"DSPConvert": ""
+			},
+			"FreqShEndBin": {
+				"Description": "Ending bin for applying frequency shift",
+				"UserVisible": 0,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 63,
+				"UserMin": 0,
+				"List": "",
+				"FractBits": 0,
+				"DSPConvert": ""
+			},
+			"GainLimitEnable": {
+				"Description": "Enable for Gain Limiting in FBC",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 1,
+				"UserMin": 0,
+				"List": ["0 = disabled", "1 = enabled"],
+				"FractBits": 0,
+				"DSPConvert": ""				
+			},
+			"GainLimitMax": {
+				"Description": "Gain Limiting Additional Headroom",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "dB",
+				"UserMax": 30.0,
+				"UserMin": -30.0,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.166096404744368				
+			}			
+		}
+	}
+}

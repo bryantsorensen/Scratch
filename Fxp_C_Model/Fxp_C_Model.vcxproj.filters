@@ -33,6 +33,9 @@
     <ClInclude Include="SYS.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FBC.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TopLevel.cpp">
@@ -48,6 +51,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SYS.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FBC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -70,6 +70,13 @@ frac48_t ret;
 }
 
 
+inline accum_t to_accum(double a)
+{
+accum_t ret = a;
+    return ret;
+}
+
+
 inline frac48_t to_frac48(double a)
 {
 frac48_t ret;
@@ -96,13 +103,33 @@ frac16_t ret;
     return ret;
 }
 
-
-inline accum_t slr(accum_t a, int sh)
+// Shift left
+inline accum_t shl(accum_t a, unsigned sh)
 {
     double shmul = pow(2.0, sh);
     accum_t ret = a * shmul;
     return ret;
+}
 
+// Shift right
+inline accum_t shr(accum_t a, unsigned sh)
+{
+    int ss = -(int)sh;
+    double shmul = pow(2.0, ss);
+    accum_t ret = a * shmul;
+    return ret;
+}
+
+// Shift signed; if shift count is negative, shift left, else shift right
+inline accum_t shs(accum_t a, int sh)
+{
+accum_t ret;
+
+    if (sh >= 0)
+        ret = shr(a, sh);
+    else
+        ret = shl(a, (unsigned)(-sh));
+    return ret;
 }
 
 
@@ -111,7 +138,7 @@ inline frac16_t mul_rnd16(frac16_t a, frac16_t b)
 frac16_t ret;
 
     accum_t acc = a * b;
-    acc = slr(acc, 7);  // acc <<= 7;   TODO: Replace function with shift operator
+    acc = shl(acc, 7);  // acc <<= 7;   TODO: Replace function with shift operator
     ret = rnd_sat16(acc);    // TODO: Determine if this is done just by moving the accumulator to the smaller container
     return ret;
 }
@@ -122,6 +149,15 @@ inline frac16_t log2_approx(accum_t a)
 frac16_t ret;
 
     ret = log2(a);
+    return ret;
+}
+
+
+inline int24_t log2abs (accum_t a)
+{
+int24_t ret;
+
+    ret = (int24_t)log2(a);
     return ret;
 }
 
@@ -143,6 +179,38 @@ frac24_t ret;
     return ret;
 }
 
+inline frac16_t max16 (frac16_t a, frac16_t b)
+{
+frac16_t ret;
+    ret = (a > b) ? a : b;
+    return ret;
+}
+
+inline frac16_t min16 (frac16_t a, frac16_t b)
+{
+frac16_t ret;
+    ret = (a < b) ? a : b;
+    return ret;
+}
+
+
+
+inline frac48_t dualTC_Smooth_48 (frac48_t Inp, frac48_t Prev, int24_t ATC, int24_t RTC)
+{
+frac48_t Ret;
+frac48_t Diff;
+int24_t TC;
+
+    Diff = Inp - Prev;
+    if (Diff > 0)
+        TC = ATC;
+    else
+        TC = RTC;
+    Ret = shr(Diff, TC) + Prev;
+    return Ret;
+
+}
+
 
 #include "Complex24Class.h"
 
@@ -158,17 +226,24 @@ frac24_t ret;
 #define     WOLA_STACKING_EVEN  0
 #define     WOLA_STACKING_ODD   1
 #define     WOLA_STACKING   WOLA_STACKING_EVEN
+#define     FILTERBANK_GAIN_LOG2    -7
 
-#define     MAX_NUM         4       // TODO: This is a junk test value, remove
+#define     NUM_WDRC_CHANNELS       8
+
+#define     FBC_COEFFS_PER_BIN      4
+#define     FBC_COEFF_SPACING       2       // Should be either 1 (continguous coeffs) or 2 (zero between each coeff)
+#define     NUM_FBC_ANA_TAPS        (FBC_COEFFS_PER_BIN*FBC_COEFF_SPACING)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Include module parameter structure headers
 
 #include "SYS_ParamStruct.h"
 #include "WDRC_ParamStruct.h"
+#include "FBC_ParamStruct.h"
 
 extern strParams_SYS    SYS_Params;
 extern strParams_WDRC   WDRC_Params;
+extern strParams_FBC    FBC_Params;
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -177,9 +252,12 @@ extern strParams_WDRC   WDRC_Params;
 #include "wola.h"
 #include "SYS.h"
 #include "WDRC.h"
+#include "FBC.h"
 
 extern strSYS  SYS;
 extern strWDRC WDRC; 
+extern strFBC  FBC;
+
 
 void FW_Param_Init();
 
