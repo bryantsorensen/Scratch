@@ -226,7 +226,9 @@ int24_t TC;
 #define     WOLA_STACKING_EVEN  0
 #define     WOLA_STACKING_ODD   1
 #define     WOLA_STACKING   WOLA_STACKING_EVEN
-#define     FILTERBANK_GAIN_LOG2    -7
+#define     FILTERBANK_GAIN_LOG2    to_frac16(-0.4432)
+
+#define     WDRC_RESERVE_GAIN       to_frac16(-7.0)
 
 #define     NUM_WDRC_CHANNELS       8
 
@@ -240,10 +242,12 @@ int24_t TC;
 #include "SYS_ParamStruct.h"
 #include "WDRC_ParamStruct.h"
 #include "FBC_ParamStruct.h"
+#include "EQ_ParamStruct.h"
 
 extern strParams_SYS    SYS_Params;
 extern strParams_WDRC   WDRC_Params;
 extern strParams_FBC    FBC_Params;
+extern strParams_EQ     EQ_Params;
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

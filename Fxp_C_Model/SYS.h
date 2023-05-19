@@ -64,7 +64,7 @@ void SYS_Init();
 void SYS_FENG_ApplyInputGain(frac24_t* InBuf);
 void SYS_HEAR_WolaFwdAnalysis();
 void SYS_HEAR_WolaRevAnalysis();
-void SYS_HEAR_ErrorSubAndEnergy(Complex24* FBC_FilterOut);
+void SYS_HEAR_ErrorSubAndEnergy();
 void SYS_HEAR_ApplySubbandGain();
 void SYS_HEAR_WolaFwdSynthesis();
 void SYS_FENG_AgcO();

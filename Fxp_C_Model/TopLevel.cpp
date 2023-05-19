@@ -13,7 +13,7 @@
 
 using namespace std;
 
-// TODO: Use module enables to decide whether to output files for that module
+// TODO: For Simulation: Use module enables to decide whether to output files for that module
 //      Some modules may always have output, like WOLA
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -31,7 +31,7 @@ strFBC  FBC;
 strParams_WDRC  WDRC_Params;
 strParams_SYS   SYS_Params;
 strParams_FBC   FBC_Params;
-
+strParams_EQ    EQ_Params;
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Main function. Drives simulation, calls all modules
@@ -118,15 +118,22 @@ for (k = 0; k < WOLA_NUM_BINS; k++)
         WavInp.ReadNVals(8, Buf);       // SIM ONLY
         for (k = 0; k < BLOCK_SIZE; k++)
             fBuf[k] = to_frac24((double)Buf[k]*Scale24);
+
         
         SYS_FENG_ApplyInputGain(fBuf);
         SYS_HEAR_WolaFwdAnalysis();
 
-        SYS_HEAR_ErrorSubAndEnergy(FBC_FilterOut);
+        FBC_HEAR_Levels();
+        FBC_HEAR_DoFiltering();
+        FBC_FilterAdaptation();
+
+        SYS_HEAR_ErrorSubAndEnergy();
 
         WDRC_Main(SYS.BinEnergy);
         
         SYS_HEAR_ApplySubbandGain();
+
+        FBC_DoFreqShift();
 
         SYS_HEAR_WolaFwdSynthesis();
 

@@ -1,0 +1,39 @@
+{
+	"EQ": {
+		"Profile": {
+			"Enable": {
+				"Description": "Enable for EQ module",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 1,
+				"UserMin": 0,
+				"List": ["0 = disabled", "1 = enabled"],
+				"FractBits": 0,
+				"DSPConvert": ""
+			},
+			"BinGain": {
+				"Description": "Equalization per-bin gain",
+				"UserVisible": 1,
+				"Elements": "WOLA_NUM_BINS",
+				"UserUnits": "dB",
+				"UserMax": 63.9999,
+				"UserMin": -64.0,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.166096404744368
+			},
+			"BroadbandGain": {
+				"Description": "Equalization Broad-Band Gain",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "dB",
+				"UserMax": 63.9999,
+				"UserMin": -64.0,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.166096404744368
+			}
+		}
+	}
+}

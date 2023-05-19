@@ -209,8 +209,9 @@ SYS.RevAnaBuf[bin][K-1] = oldest analysis result
 
         // Update FBC maximum gain limit, based on CoefMag and current gain
             if (FBC_Params.Profile.GainLimitEnable)
-        // TODO: Add EQ and VC gain
-                FBC.GainLimLog2[bin] = FBC_Params.Profile.GainLimitMax - FBC.CoefMag[bin] - (SYS.AgcoGainLog2 + SYS.MicCalGainLog2 + SYS_Params.Persist.OutpRcvrGain); // + EQbb + VCgain) - WOLA_adj_factor;
+                FBC.GainLimLog2[bin] = FBC_Params.Profile.GainLimitMax - FBC.CoefMag[bin] 
+                    -(SYS.AgcoGainLog2 + SYS.MicCalGainLog2 + SYS_Params.Persist.OutpRcvrGain + EQ_Params.Profile.BroadbandGain + SYS_Params.Profile.VCGain) 
+                    - WDRC_RESERVE_GAIN;
             else
                 FBC.GainLimLog2[bin] = to_frac16(0);    // Max value
         }

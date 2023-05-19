@@ -69,6 +69,16 @@ int24_t tap;
 
     SYS.AgcoLevelLog2 = to_frac16(-40.0);
     SYS.AgcoGainLog2 = SYS_Params.Profile.AgcoGain;
+
+    // Also initialize params-only EQ module
+    if (!EQ_Params.Profile.Enable)
+    {   
+    // If module is disabled, set all the gains to unity (cheap help to configuration; only 
+    // have to enable / disable instead of changing lots of EQ params). Re-use existing memory locations.
+        EQ_Params.Profile.BroadbandGain = to_frac16(0);
+        for (i = 0; i < WOLA_NUM_BINS; i++)
+            EQ_Params.Profile.BinGain[i] = to_frac16(0);
+    }
 }
 
 
@@ -136,7 +146,7 @@ frac24_t Ar, Ai;
     
 }
 
-void SYS_HEAR_ErrorSubAndEnergy(Complex24* FBC_FilterOut)
+void SYS_HEAR_ErrorSubAndEnergy()
 {
 int24_t i;
 frac24_t Er, Ei;
@@ -144,7 +154,7 @@ frac24_t Er, Ei;
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
         if (FBC_Params.Profile.Enable)
-            SYS.Error[i] = SYS.FwdAnaBuf[i] - FBC_FilterOut[i];
+            SYS.Error[i] = SYS.FwdAnaBuf[i] - FBC.FiltSig[i];
         else
             SYS.Error[i] = SYS.FwdAnaBuf[i];
         Er = SYS.Error[i].Real();   Ei = SYS.Error[i].Imag();
@@ -164,8 +174,7 @@ int24_t i;
     // TODO: Add in NR gain
         BinGainLog2 = WDRC.BinGainLog2[i]; // + NR.BinGainLog2[i];
         SYS.DynamicGainLog2[i] = BinGainLog2;    // for use in FBC mu mod by gain
-    // TODO: Add EQ, filterbank gains
-//        BinGainLog2 += EQ.BinGainLog2[i] + FILTERBANK_GAIN_LOG2;
+        BinGainLog2 += EQ_Params.Profile.BinGain[i] + FILTERBANK_GAIN_LOG2;
         BinGainLog2 = min16(BinGainLog2, FBC.GainLimLog2[i]);
         SYS.LimitedFwdGain[i] = BinGainLog2;        // For debugging
         SYS.FwdSynBuf[i].SetReal(rnd_sat24(mult_log2(SYS.Error[i].Real(), BinGainLog2)));
@@ -193,22 +202,24 @@ int24_t i;
 void SYS_FENG_AgcO()
 {
 int24_t i;
+frac16_t BbGainLog2;
 frac24_t TC;
 frac16_t Diff;
 frac16_t LevelLog2;
 
-// TODO: Add VC gain, EQ BB gain
-
     for (i = 0; i < BLOCK_SIZE; i++)
     {
+        BbGainLog2 = SYS_Params.Profile.VCGain + EQ_Params.Profile.BroadbandGain + SYS_Params.Profile.AgcoGain;     // Combine all broadband gains
         LevelLog2 = log2_approx(abs_f24(SYS.FwdSynOut[i]));
         Diff = LevelLog2 - SYS.AgcoLevelLog2;
         TC = (Diff > 0) ? AGCO_ATK_TC : AGCO_REL_TC;
         SYS.AgcoLevelLog2 = rnd_sat24(TC*Diff) + SYS.AgcoLevelLog2;
-        if ((SYS.AgcoLevelLog2+SYS_Params.Profile.AgcoGain) > SYS_Params.Persist.AgcoThresh)
+        if ((SYS.AgcoLevelLog2+BbGainLog2) > SYS_Params.Persist.AgcoThresh)
+        // If the result of applying all the gains is going to exceed threshold
+        // then apply as much as possible = the amount of gain that will take level to thresh
             SYS.AgcoGainLog2 = SYS_Params.Persist.AgcoThresh - SYS.AgcoLevelLog2;
         else
-            SYS.AgcoGainLog2 = SYS_Params.Profile.AgcoGain;
+            SYS.AgcoGainLog2 = BbGainLog2;      // Otherwise apply all the gain possible
         SYS.OutBuf[i] = mult_log2(SYS.FwdSynOut[i], SYS.AgcoGainLog2);
     }
 }

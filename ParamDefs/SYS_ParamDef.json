@@ -46,6 +46,17 @@
 				"List": "",
 				"FractBits": 16,
 				"DSPConvert": 0.166096404744368
+			},
+			"VCGain": {
+				"Description": "Volume Control Broadband Gain (storage in EEPROM)",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "dB",
+				"UserMax": 63.999,
+				"UserMin": -64.0,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.166096404744368
 			}
 		}
 	}
