@@ -71,12 +71,15 @@ def create_param_init_c_code(val_inp_fname, profile_num, param_defs_dir, out_fna
                     val_name = val_bname + param_name
                     fbits = def_list[def_param_name]['FractBits']
                     cast_str = ''   # default to no cast string
+                    endbracket = '' # default to no end bracket
                     if fbits != '' and fbits != 0:
                         if fbits == 23:
-                            cast_str = 'to_frac24'
+                            cast_str = 'to_frac24('
+                            endbracket = ')'
                         elif fbits == 16:
-                            cast_str = 'to_frac16'
-                    fstr = fstr + '    ' + val_name + ' = ' + cast_str + '(' + str(fw_value) + ');\n'
+                            cast_str = 'to_frac16('
+                            endbracket = ')'
+                    fstr = fstr + '    ' + val_name + ' = ' + cast_str + str(fw_value) + endbracket + ';\n'
     # Go to next module with space between each modules' params
         fstr = fstr + '\n'
 # Write to and close the output file

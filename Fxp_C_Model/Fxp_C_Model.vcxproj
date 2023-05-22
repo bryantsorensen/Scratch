@@ -139,6 +139,7 @@
     <ClInclude Include="Common.h" />
     <ClInclude Include="Complex24Class.h" />
     <ClInclude Include="FBC.h" />
+    <ClInclude Include="NR.h" />
     <ClInclude Include="SYS.h" />
     <ClInclude Include="WAV_Utils.h" />
     <ClInclude Include="WDRC.h" />
@@ -147,6 +148,7 @@
   <ItemGroup>
     <ClCompile Include="FBC.cpp" />
     <ClCompile Include="getopt.cpp" />
+    <ClCompile Include="NR.cpp" />
     <ClCompile Include="SYS.cpp" />
     <ClCompile Include="TopLevel.cpp" />
     <ClCompile Include="WAV_Utils.cpp" />

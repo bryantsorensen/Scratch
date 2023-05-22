@@ -19,6 +19,9 @@ static strWOLA WOLASim;
 //frac24_t WolaSynWin[WOLA_LS];
 
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Functions
+
 static void SYS_SimWolaInit()
 {
     WOLASim.FwdWolaHandle = WolaInit(WOLA_LA, WOLA_LS, WOLA_R, WOLA_N, WOLA_STACKING);
@@ -159,6 +162,7 @@ frac24_t Er, Ei;
             SYS.Error[i] = SYS.FwdAnaBuf[i];
         Er = SYS.Error[i].Real();   Ei = SYS.Error[i].Imag();
         SYS.BinEnergy[i] = sat48(Er*Er + Ei*Ei);
+        SYS.BinEnergyLog2[i] = log2(SYS.BinEnergy[i]);
     }
 
 }

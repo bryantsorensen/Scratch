@@ -23,7 +23,7 @@ using namespace std;
 strWDRC WDRC;
 strSYS  SYS;
 strFBC  FBC;
-
+strNR   NR;
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Instantiate module parameter structures
@@ -32,6 +32,7 @@ strParams_WDRC  WDRC_Params;
 strParams_SYS   SYS_Params;
 strParams_FBC   FBC_Params;
 strParams_EQ    EQ_Params;
+strParams_NR    NR_Params;
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Main function. Drives simulation, calls all modules
@@ -111,6 +112,7 @@ for (k = 0; k < WOLA_NUM_BINS; k++)
     SYS_Init();
     WDRC_Init();
     FBC_Init();     // NOTE: FBC_Init MUST be called after WDRC_Init in order to capture correct target gains
+    NR_Init();
 
 // Do simulation, going through all blocks
     for (i = 0; i < Blocks; i++)
@@ -123,13 +125,15 @@ for (k = 0; k < WOLA_NUM_BINS; k++)
         SYS_FENG_ApplyInputGain(fBuf);
         SYS_HEAR_WolaFwdAnalysis();
 
+        NR_Main();
+
         FBC_HEAR_Levels();
         FBC_HEAR_DoFiltering();
         FBC_FilterAdaptation();
 
         SYS_HEAR_ErrorSubAndEnergy();
 
-        WDRC_Main(SYS.BinEnergy);
+        WDRC_Main();
         
         SYS_HEAR_ApplySubbandGain();
 

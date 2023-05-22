@@ -86,7 +86,7 @@ int24_t i;
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
     // Create B + E
-        FBC.BEEnergy[i] = SYS.BinEnergy[i] + SYS.RevEnergy[i];
+        FBC.BEEnergy[i] = SYS.BinEnergy[i] + SYS.RevEnergy[i];      // Add in the linear domain
         FBC.ASmoothed[i] = dualTC_Smooth_48(SYS.MicEnergy[i], FBC.ASmoothed[i], FBC_LEVEL_ATK_SHIFT, FBC_LEVEL_REL_SHIFT);
         FBC.ESmoothed[i] = dualTC_Smooth_48(SYS.BinEnergy[i], FBC.ESmoothed[i], FBC_LEVEL_ATK_SHIFT, FBC_LEVEL_REL_SHIFT);
         FBC.BESmoothed[i] = dualTC_Smooth_48(FBC.BEEnergy[i], FBC.BESmoothed[i], FBC_LEVEL_ATK_SHIFT, FBC_LEVEL_REL_SHIFT);

@@ -32,6 +32,7 @@ struct strSYS
     frac48_t    MicEnergy[WOLA_NUM_BINS];
     Complex24   Error[WOLA_NUM_BINS];
     frac48_t    BinEnergy[WOLA_NUM_BINS];
+    frac16_t    BinEnergyLog2[WOLA_NUM_BINS];
     frac16_t    FwdGainLog2[WOLA_NUM_BINS];
     Complex24   FwdSynBuf[WOLA_NUM_BINS];
     frac24_t    FwdSynOut[BLOCK_SIZE];

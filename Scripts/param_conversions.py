@@ -17,8 +17,9 @@ BB_SAMPLE_RATE = 24000.0
 SB_SAMPLE_RATE = (BB_SAMPLE_RATE/8.0)
 LOG2_TO_DB20 = math.log10(2.0)*20.0
 DB20_TO_LOG2 = 1.0/LOG2_TO_DB20
-LOG2_TO_DB10 = math.log2(2.0)*10.0
+LOG2_TO_DB10 = math.log10(2.0)*10.0
 DB10_TO_LOG2 = 1.0/LOG2_TO_DB10
+NR_DECIMATION_RATE = 8
 
 def convert_param_from_user_to_fw(userval, param_def_info, def_param_name):
 # Get the parameter info from the following keys of param_def_info
@@ -82,16 +83,27 @@ def convert_param_from_user_to_fw(userval, param_def_info, def_param_name):
             fwmax = usermax
             fwmin = usermin
     elif isinstance(convert_val, str):     # if string, use conversion functions
-        if convert_val == 'TestConv':
-            fw_value = 1.0 - userval
-            if NeedFwLimits:
-                fwmax = 1.0 - usermax
-                fwmin = 1.0 - usermin
-        elif convert_val == 'AnsiTC':
+        if convert_val == 'AnsiTC':
             fw_value = 1.0 - math.exp(-1.0/(userval/SB_SAMPLE_RATE))
             if NeedFwLimits:
                 fwmax = 1.0 - math.exp(-1.0/(usermax/SB_SAMPLE_RATE))
                 fwmin = 1.0 - math.exp(-1.0/(usermin/SB_SAMPLE_RATE))
+        elif convert_val == 'DeltaComp':
+# TODO: This conversion needs to be from log2 SNR to log2 gain, AND needs to be much, much simpler
+            alpha= (1.0/(1.0 - (10.0**(-18.0/20.0)))) - 1.0
+            T = 1.0 - (10.0**(-(userval+0.4)/20.0))
+            fw_value = (1.0 + alpha)*T
+            if NeedFwLimits:
+                T = 1.0 - (10.0**(-(usermax+0.4)/2.0))
+                fwmax = (1.0 + alpha)*T
+                T = 1.0 - (10.0**(-(usermin+0.4)/2.0))
+                fwmin = (1.0 + alpha)*T
+        elif convert_val == 'dBperSec_to_log2':
+            sample_rate = SB_SAMPLE_RATE / NR_DECIMATION_RATE
+            fw_value = userval/(sample_rate*LOG2_TO_DB10)
+            if NeedFwLimits:
+                fwmax = usermax/(sample_rate*LOG2_TO_DB10)
+                fwmin = usermin/(sample_rate*LOG2_TO_DB10)
 
     # TODO: Add other conversion functions here as needed
 

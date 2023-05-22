@@ -72,7 +72,7 @@ uint8_t i;
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Main processing function
 
-void WDRC_Main(frac48_t* BinEnergy)
+void WDRC_Main()
 {
 accum_t Acc;
 int24_t CurCh;
@@ -92,7 +92,7 @@ int24_t i;
 
         Acc = 0;
         for (i = WDRC.ChannelStartBin[CurCh]; i <= WDRC.ChannelLastBin[CurCh]; i++)
-            Acc += (accum_t)BinEnergy[i];
+            Acc += (accum_t)SYS.BinEnergy[i];       // Add in linear domain
 
         ChanEnergyLog2 = log2_approx(Acc);
 
@@ -123,6 +123,8 @@ int24_t i;
         WDRC.LevelLog2[CurCh] = mul_rnd16(TC, LevelDiff) + WDRC.LevelLog2[CurCh];     // Single-pole smoothing filter to update level
 
     // Loop through regions until we find where level is below the region's threshold
+        Slope = to_frac16(0);
+        Gain = to_frac16(0);
         for (i = 0; i <= 4; i++)
         {
             DiffThr = WDRC.LevelLog2[CurCh] - WDRC.Thresh[CurCh][i];

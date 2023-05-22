@@ -103,6 +103,24 @@ frac16_t ret;
     return ret;
 }
 
+inline int24_t upper_accum_to_f24(double a)
+{
+    double scale = pow(2.0, 16);
+    double b = a * scale;
+    int i = (int)b;
+    return i;
+}
+
+inline frac24_t lower_accum_to_f24(double a)
+{
+    double scale = pow(2.0, 16);
+    double b = a * scale;
+    int i = (int)b;
+    b = b - (double)i;      // remove integer part
+    return b;
+}
+
+
 // Shift left
 inline accum_t shl(accum_t a, unsigned sh)
 {
@@ -243,11 +261,13 @@ int24_t TC;
 #include "WDRC_ParamStruct.h"
 #include "FBC_ParamStruct.h"
 #include "EQ_ParamStruct.h"
+#include "NR_ParamStruct.h"
 
 extern strParams_SYS    SYS_Params;
 extern strParams_WDRC   WDRC_Params;
 extern strParams_FBC    FBC_Params;
 extern strParams_EQ     EQ_Params;
+extern strParams_NR     NR_Params;
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -257,10 +277,12 @@ extern strParams_EQ     EQ_Params;
 #include "SYS.h"
 #include "WDRC.h"
 #include "FBC.h"
+#include "NR.h"
 
-extern strSYS  SYS;
-extern strWDRC WDRC; 
-extern strFBC  FBC;
+extern strSYS   SYS;
+extern strWDRC  WDRC; 
+extern strFBC   FBC;
+extern strNR    NR;
 
 
 void FW_Param_Init();
