@@ -2,7 +2,7 @@
 	"NR": {
 		"Persist": {
 			"NoiseFastTC": {
-				"Description": "Fast noise estimate time constant",
+				"Description": "NR Fast noise estimate time constant",
 				"UserVisible": 1,
 				"Elements": 1,
 				"UserUnits": "ms",
@@ -10,10 +10,10 @@
 				"UserMin": 0.001,
 				"List": "",
 				"FractBits": 23,
-				"DSPConvert": "AnsiTC"
+				"DSPConvert": "NrTC"
 			},
 			"NoiseSlowCoeff": {
-				"Description": "Slow noise estimate adjustment",
+				"Description": "NR Slow noise estimate adjustment",
 				"UserVisible": 1,
 				"Elements": 1,
 				"UserUnits": "dB/s",
@@ -22,11 +22,22 @@
 				"List": "",
 				"FractBits": 23,
 				"DSPConvert": "dBperSec_to_log2"
+			},
+			"GainSmoothTC": {
+				"Description": "NR Gain Smoothing Time Constant",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "NrTC"
 			}
 		},
 		"Profile": {
 			"Enable": {
-				"Description": "Enable for Noise Reduction (NR) module",
+				"Description": "Enable for NR module",
 				"UserVisible": 1,
 				"Elements": 1,
 				"UserUnits": "",
@@ -37,7 +48,7 @@
 				"DSPConvert": ""
 			},
 			"MaxReduction": {
-				"Description": "Noise Reduction gain reduction maximum per bin",
+				"Description": "NR gain reduction maximum per bin (more negative --> more reduction)",
 				"UserVisible": 1,
 				"Elements": "WOLA_NUM_BINS",
 				"UserUnits": "dB",
@@ -45,7 +56,7 @@
 				"UserMin": -64.0,
 				"List": "",
 				"FractBits": 16,
-				"DSPConvert": "DeltaComp"
+				"DSPConvert": "NRMaxReduce"
 			}
 		}
 	}

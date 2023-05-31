@@ -10,7 +10,7 @@
 				"UserMin": 0.001,
 				"List": "",
 				"FractBits": 23,
-				"DSPConvert": "AnsiTC"
+				"DSPConvert": "WdrcTC"
 			},
 			"ExpansRelTC": {
 				"Description": "Expansion Region Release Time Constant",
@@ -21,7 +21,7 @@
 				"UserMin": 0.001,
 				"List": "",
 				"FractBits": 23,
-				"DSPConvert": "AnsiTC"
+				"DSPConvert": "WdrcTC"
 			},
 			"CompressAtkTC": {
 				"Description": "Compression Region Attack Time Constant",
@@ -32,7 +32,7 @@
 				"UserMin": 0.001,
 				"List": "",
 				"FractBits": 23,
-				"DSPConvert": "AnsiTC"
+				"DSPConvert": "WdrcTC"
 			},
 			"CompressRelTC": {
 				"Description": "Compression Region Release Time Constant",
@@ -43,7 +43,7 @@
 				"UserMin": 0.001,
 				"List": "",
 				"FractBits": 23,
-				"DSPConvert": "AnsiTC"
+				"DSPConvert": "WdrcTC"
 			},
 			"LimitAtkTC": {
 				"Description": "Limiting Region Attack Time Constant",
@@ -54,7 +54,7 @@
 				"UserMin": 0.001,
 				"List": "",
 				"FractBits": 23,
-				"DSPConvert": "AnsiTC"
+				"DSPConvert": "WdrcTC"
 			},
 			"LimitRelTC": {
 				"Description": "Limiting Region Release Time Constant",
@@ -65,7 +65,7 @@
 				"UserMin": 0.001,
 				"List": "",
 				"FractBits": 23,
-				"DSPConvert": "AnsiTC"
+				"DSPConvert": "WdrcTC"
 			}
 		},
 		"Profile": {

@@ -19,7 +19,13 @@ LOG2_TO_DB20 = math.log10(2.0)*20.0
 DB20_TO_LOG2 = 1.0/LOG2_TO_DB20
 LOG2_TO_DB10 = math.log10(2.0)*10.0
 DB10_TO_LOG2 = 1.0/LOG2_TO_DB10
-NR_DECIMATION_RATE = 8
+WDRC_NUM_CHANNELS = 16
+WDRC_DECIMATION_RATE = WDRC_NUM_CHANNELS
+WDRC_UPDATE_RATE = (SB_SAMPLE_RATE/WDRC_DECIMATION_RATE)
+NR_DECIMATION_RATE = 8      # Assumes 4 update slices, 8 bins each, total 32 bins
+NR_UPDATE_RATE = (SB_SAMPLE_RATE/NR_DECIMATION_RATE)
+NR_GAIN_LUT_MIN_SNR = -31.0
+NR_GAIN_LUT_MIN = (2.0**(NR_GAIN_LUT_MIN_SNR/8.0)) - 1.0     # The scaling on LUT_MIN_SNR is somewhat arbitrary
 
 def convert_param_from_user_to_fw(userval, param_def_info, def_param_name):
 # Get the parameter info from the following keys of param_def_info
@@ -83,27 +89,27 @@ def convert_param_from_user_to_fw(userval, param_def_info, def_param_name):
             fwmax = usermax
             fwmin = usermin
     elif isinstance(convert_val, str):     # if string, use conversion functions
-        if convert_val == 'AnsiTC':
-            fw_value = 1.0 - math.exp(-1.0/(userval/SB_SAMPLE_RATE))
+        if convert_val == 'WdrcTC':
+            fw_value = 1.0 - math.exp(-1.0/(userval/WDRC_UPDATE_RATE))
             if NeedFwLimits:
-                fwmax = 1.0 - math.exp(-1.0/(usermax/SB_SAMPLE_RATE))
-                fwmin = 1.0 - math.exp(-1.0/(usermin/SB_SAMPLE_RATE))
-        elif convert_val == 'DeltaComp':
-# TODO: This conversion needs to be from log2 SNR to log2 gain, AND needs to be much, much simpler
-            alpha= (1.0/(1.0 - (10.0**(-18.0/20.0)))) - 1.0
-            T = 1.0 - (10.0**(-(userval+0.4)/20.0))
-            fw_value = (1.0 + alpha)*T
+                fwmax = 1.0 - math.exp(-1.0/(usermax/WDRC_UPDATE_RATE))
+                fwmin = 1.0 - math.exp(-1.0/(usermin/WDRC_UPDATE_RATE))
+        elif convert_val == 'NrTC':
+            fw_value = 1.0 - math.exp(-1.0/(userval/NR_UPDATE_RATE))
             if NeedFwLimits:
-                T = 1.0 - (10.0**(-(usermax+0.4)/2.0))
-                fwmax = (1.0 + alpha)*T
-                T = 1.0 - (10.0**(-(usermin+0.4)/2.0))
-                fwmin = (1.0 + alpha)*T
+                fwmax = 1.0 - math.exp(-1.0/(usermax/NR_UPDATE_RATE))
+                fwmin = 1.0 - math.exp(-1.0/(usermin/NR_UPDATE_RATE))
+        elif convert_val == 'NRMaxReduce':
+        # Calc in code: fw_value*GainTableOut + GainTableOut = GainTableOut*(1+fw_value)
+            fw_value = ((userval*DB20_TO_LOG2)/NR_GAIN_LUT_MIN) - 1.0       # Remove 1.0 to get fw_value on [0, 1.0)
+            if NeedFwLimits:
+                fwmax = ((usermax*DB20_TO_LOG2)/NR_GAIN_LUT_MIN) - 1.0
+                fwmin = ((usermin*DB20_TO_LOG2)/NR_GAIN_LUT_MIN) - 1.0
         elif convert_val == 'dBperSec_to_log2':
-            sample_rate = SB_SAMPLE_RATE / NR_DECIMATION_RATE
-            fw_value = userval/(sample_rate*LOG2_TO_DB10)
+            fw_value = userval/(NR_UPDATE_RATE*LOG2_TO_DB10)
             if NeedFwLimits:
-                fwmax = usermax/(sample_rate*LOG2_TO_DB10)
-                fwmin = usermin/(sample_rate*LOG2_TO_DB10)
+                fwmax = usermax/(NR_UPDATE_RATE*LOG2_TO_DB10)
+                fwmin = usermin/(NR_UPDATE_RATE*LOG2_TO_DB10)
 
     # TODO: Add other conversion functions here as needed
 
