@@ -2,7 +2,7 @@
 //
 // System processing module for fixed-point C code
 //
-// Novidan, Inc. (c) 2023.  May not be used or copied with prior consent.
+// Novidan, Inc. (c) 2023.  May not be used or copied without prior consent.
 //
 // Bryant Sorensen, author
 // Started 09 May 2023
@@ -12,35 +12,12 @@
 #include "Common.h"
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Simulation convention - WOLA values
-
-static strWOLA WOLASim;
-//frac24_t WolaAnaWin[WOLA_LA];
-//frac24_t WolaSynWin[WOLA_LS];
-
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Functions
-
-static void SYS_SimWolaInit()
-{
-    WOLASim.FwdWolaHandle = WolaInit(WOLA_LA, WOLA_LS, WOLA_R, WOLA_N, WOLA_STACKING);
-//    WolaSetAnaWin(WOLASim.FwdWolaHandle, WolaAnaWin, WOLA_N);     // Comment out to leave default window
-//    WolaSetSynWin(WOLASim.FwdWolaHandle, WolaSynWin, WOLA_N);
-
-    WOLASim.RevWolaHandle = WolaInit(WOLA_LA, WOLA_LS, WOLA_R, WOLA_N, WOLA_STACKING);
-//    WolaSetAnaWin(WOLASim.RevWolaHandle, WolaAnaWin, WOLA_N);
-
-}
-
 
 void SYS_Init()
 {
 int24_t i;
 int24_t tap;
-
-    // SIM ONLY! Normally done by compile-time config for HEAR code
-    SYS_SimWolaInit();
 
     SYS.MicCalGainLog2 = SYS_Params.Persist.InpMicGain;     // TODO: If we need to ramp gain, do it using this SYS variable
 
@@ -86,13 +63,13 @@ int24_t tap;
 
 
 
-void SYS_FENG_ApplyInputGain(frac24_t* InBuf)
+void SYS_FENG_ApplyInputGain()
 {
 int24_t i;
 
     for (i = 0; i < BLOCK_SIZE; i++)
     {
-        SYS.FwdAnaIn[i] = mult_log2(InBuf[i], SYS_Params.Persist.InpMicGain);
+        SYS.FwdAnaIn[i] = mult_log2(SYS.InBuf[i], SYS_Params.Persist.InpMicGain);
     }
 }
 
@@ -226,11 +203,4 @@ frac16_t LevelLog2;
             SYS.AgcoGainLog2 = BbGainLog2;      // Otherwise apply all the gain possible
         SYS.OutBuf[i] = mult_log2(SYS.FwdSynOut[i], SYS.AgcoGainLog2);
     }
-}
-
-
-void SYS_SimCloseWola()
-{
-    WolaClose(WOLASim.FwdWolaHandle);
-    WolaClose(WOLASim.RevWolaHandle);
 }

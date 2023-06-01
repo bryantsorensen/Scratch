@@ -2,7 +2,7 @@
 //
 // System processing header file for fixed-point C code
 //
-// Novidan, Inc. (c) 2023.  May not be used or copied with prior consent.
+// Novidan, Inc. (c) 2023.  May not be used or copied without prior consent.
 //
 // Bryant Sorensen, author
 // Started 09 May 2023
@@ -27,6 +27,7 @@
 struct strSYS
 {
     frac16_t    MicCalGainLog2;
+    frac24_t    InBuf[BLOCK_SIZE];
     frac24_t    FwdAnaIn[BLOCK_SIZE];
     Complex24   FwdAnaBuf[WOLA_NUM_BINS];
     frac48_t    MicEnergy[WOLA_NUM_BINS];
@@ -62,14 +63,13 @@ struct strWOLA
 // Function prototypes
 
 void SYS_Init();
-void SYS_FENG_ApplyInputGain(frac24_t* InBuf);
+void SYS_FENG_ApplyInputGain();
 void SYS_HEAR_WolaFwdAnalysis();
 void SYS_HEAR_WolaRevAnalysis();
 void SYS_HEAR_ErrorSubAndEnergy();
 void SYS_HEAR_ApplySubbandGain();
 void SYS_HEAR_WolaFwdSynthesis();
 void SYS_FENG_AgcO();
-void SYS_SimCloseWola();    // SIM ONLY
 
 
 #endif  // _SYS_H

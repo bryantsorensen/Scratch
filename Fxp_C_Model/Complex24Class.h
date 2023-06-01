@@ -2,7 +2,7 @@
 //
 // Header file for Complex24 class definition. Uses 24b fractional data type.
 //
-// Novidan, Inc. (c) 2023.  May not be used or copied with prior consent.
+// Novidan, Inc. (c) 2023.  May not be used or copied without prior consent.
 //
 // Bryant Sorensen, author
 // Started 24 Apr 2023

@@ -2,7 +2,7 @@
 //
 // Common header file for fixed-point C code
 //
-// Novidan, Inc. (c) 2023.  May not be used or copied with prior consent.
+// Novidan, Inc. (c) 2023.  May not be used or copied without prior consent.
 //
 // Bryant Sorensen, author
 // Started 24 Apr 2023
@@ -234,16 +234,18 @@ int24_t TC;
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Definitions common across modules
-#define     BLOCK_SIZE      8
+#define     BLOCK_SIZE              8
+#define     BASEBAND_SAMPLE_RATE    24000
+#define     SUBBAND_SAMPLE_RATE     (BASEBAND_SAMPLE_RATE/BLOCK_SIZE)
 
-#define     WOLA_LA         64
-#define     WOLA_LS         64
-#define     WOLA_N          64
-#define     WOLA_NUM_BINS   (WOLA_N/2)
-#define     WOLA_R          BLOCK_SIZE
-#define     WOLA_STACKING_EVEN  0
-#define     WOLA_STACKING_ODD   1
-#define     WOLA_STACKING   WOLA_STACKING_EVEN
+#define     WOLA_LA                 64
+#define     WOLA_LS                 64
+#define     WOLA_N                  64
+#define     WOLA_NUM_BINS           (WOLA_N/2)
+#define     WOLA_R                  BLOCK_SIZE
+#define     WOLA_STACKING_EVEN      0
+#define     WOLA_STACKING_ODD       1
+#define     WOLA_STACKING           WOLA_STACKING_EVEN
 #define     FILTERBANK_GAIN_LOG2    to_frac16(-0.4432)
 
 #define     WDRC_RESERVE_GAIN       to_frac16(-7.0)
@@ -288,11 +290,11 @@ extern strNR    NR;
 void FW_Param_Init();
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Simulation helper function prototypes and includes
+// Simulation helper includes, references
 
-#include "WAV_Utils.h"
+#include "SIM.h"
 
-int getopt(int nargc, char * const nargv[], const char *ostr);
-char* get_optarg();
+extern  strSIM  SIM;
+extern  strWOLA WOLASim;
 
 #endif  // _COMMON_H

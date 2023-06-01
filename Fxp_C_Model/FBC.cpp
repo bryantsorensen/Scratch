@@ -2,7 +2,7 @@
 //
 // Feedback Canceller (FBC) for fixed-point C code
 //
-// Novidan, Inc. (c) 2023.  May not be used or copied with prior consent.
+// Novidan, Inc. (c) 2023.  May not be used or copied without prior consent.
 //
 // Bryant Sorensen, author
 // Started 11 May 2023

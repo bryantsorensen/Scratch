@@ -2,7 +2,7 @@
 //
 // Top-level simulation code for fixed-point C code
 //
-// Novidan, Inc. (c) 2023.  May not be used or copied with prior consent.
+// Novidan, Inc. (c) 2023.  May not be used or copied without prior consent.
 //
 // Bryant Sorensen, author
 // Started 24 Apr 2023
@@ -13,8 +13,17 @@
 
 using namespace std;
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Simulation variables
+// 
 // TODO: For Simulation: Use module enables to decide whether to output files for that module
 //      Some modules may always have output, like WOLA
+
+strSIM  SIM;            // Declared as global because both top level and SIM modules use it
+strWOLA WOLASim;        // Declared as global because both SIM and SYS modules use it
+//frac24_t WolaAnaWin[WOLA_LA];
+//frac24_t WolaSynWin[WOLA_LS];
+
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Instantiate module structures as globals
@@ -44,69 +53,38 @@ int main (int argc, char* argv[])
 cWAVops WavInp;
 cWAVops WavOutp;
 int N;
-int Blocks;
-int i;
+int BlocksInSim;
+int CurBlock;
 int32_t Buf[8];
-char ValidOptions[] = "s:d:r:h";     // List of valid option switches.  The ':' after a character means it has must have an argument after it
-int option;
-int8_t ExitVal = 0;
-char* InfileName = NULL;
-char* OutFileName = NULL;
-char* ResultPath = NULL;
+int8_t RetVal = 0;
 
+//++++++++++++++++++++
+// Simulation
 
 // Parse command line options until it returns -1
-    option = 0;
-    while ((option != -1) && (!ExitVal))
-    {
-        option = getopt(argc, argv, ValidOptions);
-        switch (option)
-        {
-            case 'h':
-                printf ("Command line options for %s:", argv[0]);
-                printf ("-s <source file name and path>         REQUIRED\n");
-                printf ("-d <destination file name and path>    REQUIRED\n");
-                printf ("-r <results output directory>          REQUIRED\n");
-                printf ("-h                                     THIS HELP MENU\n");
-                printf ("\nNow exiting...\n\n");
-                ExitVal = 1;
-                break;
-            case 's':
-                InfileName = get_optarg();      // Point to input file name string
-                break;
-            case 'd':
-                OutFileName = get_optarg();
-                break;
-            case 'r':
-                ResultPath = get_optarg();
-                break;
-            case '?':
-                printf ("\nErroneous Command Line Argument; use -h for help. Now exiting...\n\n");
-                ExitVal = 2;
-                break;
-        }
-    }
-    if (ExitVal)
-        exit(ExitVal);
+    RetVal = parse_command_line(argc, argv);
+    if (RetVal != 0)
+        exit(RetVal);
 
 // Open input .wav file, check its parameters, get size, create output .wav file
 
-    WavInp.OpenReadFile(InfileName);
-    if ((WavInp.GetBitsPerSample() != 24) || (WavInp.GetSampleRate() != 24000) || (!WavInp.IsMono()))
+    WavInp.OpenReadFile(SIM.InfileName);
+    if ((WavInp.GetBitsPerSample() != 24) || (WavInp.GetSampleRate() != BASEBAND_SAMPLE_RATE) || (!WavInp.IsMono()))
         printf("Something wrong with input file!\n");
 
     N = WavInp.GetNumSamples();
-    Blocks = N >> 3;    // Round off to modulo 8 floor
-    N = Blocks << 3;    // Update number of samples to be multiple of 8
+    BlocksInSim = N >> 3;    // Round off to modulo 8 floor
+    N = BlocksInSim << 3;    // Update number of samples to be multiple of 8
 
-    WavOutp.OpenMonoWriteFile(OutFileName, 24000, 24, N);
+    WavOutp.OpenMonoWriteFile(SIM.OutFileName, BASEBAND_SAMPLE_RATE, 24, N);
 
-Complex24 FBC_FilterOut[WOLA_NUM_BINS];     // Temp for sim
-frac24_t fBuf[BLOCK_SIZE];
 const double Scale24 = 0.00000011920928955078125;   // 2^-23
 int k;
-for (k = 0; k < WOLA_NUM_BINS; k++)
-    FBC_FilterOut[k] = 0;
+
+    SIM_Init();     // get elements of simulation initialized
+
+//++++++++++++++++++++
+// Firmware
 
 // Initialize all modules
     SYS_Init();
@@ -114,15 +92,23 @@ for (k = 0; k < WOLA_NUM_BINS; k++)
     FBC_Init();     // NOTE: FBC_Init MUST be called after WDRC_Init in order to capture correct target gains
     NR_Init();
 
+//++++++++++++++++++++
+// Simulation
+
 // Do simulation, going through all blocks
-    for (i = 0; i < Blocks; i++)
+    for (CurBlock = 0; CurBlock < BlocksInSim; CurBlock++)
     {
+
         WavInp.ReadNVals(8, Buf);       // SIM ONLY
         for (k = 0; k < BLOCK_SIZE; k++)
-            fBuf[k] = to_frac24((double)Buf[k]*Scale24);
+            SYS.InBuf[k] = to_frac24((double)Buf[k]*Scale24);   // This needs to be replaced with moving data in from audio I/O block
 
-        
-        SYS_FENG_ApplyInputGain(fBuf);
+        SIM_Feedback(SYS.InBuf, SYS.OutBuf);
+
+//++++++++++++++++++++
+// Firmware
+
+        SYS_FENG_ApplyInputGain();
         SYS_HEAR_WolaFwdAnalysis();
 
         NR_Main();
@@ -143,15 +129,22 @@ for (k = 0; k < WOLA_NUM_BINS; k++)
 
         SYS_FENG_AgcO();
 
+//++++++++++++++++++++
+// Simulation
+
         for (k = 0; k < BLOCK_SIZE; k++)
-            Buf[k] = (int32_t)(round(SYS.OutBuf[k]/Scale24));
+            Buf[k] = (int32_t)(round(SYS.OutBuf[k]/Scale24));       // This needs to be replaced with sending data to audio I/O block
         WavOutp.WriteNVals(8, Buf);      // SIM ONLY
     }
 
-// Close all files and exit
+//++++++++++++++++++++
+// Simulation
+
+// Close all files
     WavInp.CloseFile();
     WavOutp.CloseFile();
-    SYS_SimCloseWola();
+    SIM_CloseWola();
 
+// Exit the program
     exit(0);
 }
