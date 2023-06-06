@@ -154,7 +154,7 @@ static inline void SIM_WolaInit()
 static void SIM_FB_Init()
 {
 unsigned i;
-FILE* fbf;
+FILE* fbf = NULL;
 double fileval;
 
     for (i = 0; i < FB_SIM_TAPS; i++)
@@ -164,35 +164,39 @@ double fileval;
     SIM.CurOpIdx = 0;
     SIM.CurSample = 0;
 
-    // Open feedback sim file for read
-    fopen_s(&fbf, SIM.FBSimFile, "r");
-    if (fbf == NULL)    // If can't read, default to no sim (FIRs set to 0.0s)
+    if (FBC_Params.Profile.Enable)
     {
-        printf ("\nERROR! Could not open FB sim file %s for read...\n\n", SIM.FBSimFile);
-        SIM.TransitionStart = (uint32_t)(-1);   // Set so never encountered
-        SIM.TransitionEnd = (uint32_t)(-1);
-        for (i = 0; i < FB_SIM_TAPS; i++)
+        // Open feedback sim file for read
+        if (SIM.FBSimFile != NULL)
+            fopen_s(&fbf, SIM.FBSimFile, "r");
+        if (fbf == NULL)    // If can't read, default to no sim (FIRs set to 0.0s)
         {
-            SIM.FB_FIR1[i] = to_frac24(0.0);
-            SIM.FB_FIR2[i] = to_frac24(0.0);
+            printf ("\nERROR! Could not open FB sim file %s for read...\n\n", SIM.FBSimFile);
+            SIM.TransitionStart = (uint32_t)(-1);   // Set so never encountered
+            SIM.TransitionEnd = (uint32_t)(-1);
+            for (i = 0; i < FB_SIM_TAPS; i++)
+            {
+                SIM.FB_FIR1[i] = to_frac24(0.0);
+                SIM.FB_FIR2[i] = to_frac24(0.0);
+            }
         }
-    }
-    else
-    {
-    // FORMAT (all double values): transition start in seconds, FIR1 values, FIR2 values
-    // Scale the FIR coefficients with any desired gain
-        fscanf_s(fbf, "%le", &fileval);
-        SIM.TransitionStart = (uint32_t)(fileval*(double)BASEBAND_SAMPLE_RATE);
-        SIM.TransitionEnd = SIM.TransitionStart + (uint32_t)FB_SIM_TRNSTION_SMPLS_DBL;
-        for (i = 0; i < FB_SIM_TAPS; i++)
+        else
         {
-            fscanf_s(fbf, "%le", &(SIM.FB_FIR1[i]));
+        // FORMAT (all double values): transition start in seconds, FIR1 values, FIR2 values
+        // Scale the FIR coefficients with any desired gain
+            fscanf_s(fbf, "%le", &fileval);
+            SIM.TransitionStart = (uint32_t)(fileval*(double)BASEBAND_SAMPLE_RATE);
+            SIM.TransitionEnd = SIM.TransitionStart + (uint32_t)FB_SIM_TRNSTION_SMPLS_DBL;
+            for (i = 0; i < FB_SIM_TAPS; i++)
+            {
+                fscanf_s(fbf, "%le", &(SIM.FB_FIR1[i]));
+            }
+            for (i = 0; i < FB_SIM_TAPS; i++)
+            {
+                fscanf_s(fbf, "%le", &(SIM.FB_FIR2[i]));
+            }
+            fclose(fbf);
         }
-        for (i = 0; i < FB_SIM_TAPS; i++)
-        {
-            fscanf_s(fbf, "%le", &(SIM.FB_FIR2[i]));
-        }
-        fclose(fbf);
     }
 }
 

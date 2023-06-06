@@ -39,7 +39,6 @@
 
 //#endif /*_WIN32*/
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
@@ -64,8 +63,6 @@ typedef uint32_t WolaHandle;
 /******************************************************************************
 ** Error functions and codes
 ******************************************************************************/
-void SetError(const int16_t nErrCode);
-int16_t GetError(void);
 
 /* external errors */
 #define Wola_errNoError				0
@@ -85,7 +82,6 @@ int16_t GetError(void);
 #define Wola_intBadWindowSize		100
 #define Wola_intBadZeroSpacing		101
 #define Wola_intBadUpdateMode       102
-
 
 
 /******************************************************************************
