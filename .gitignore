@@ -1,6 +1,7 @@
 Fxp_C_Model/x64/*
 Fxp_C_Model/.vs/*
 Fxp_C_Model/Debug/*
+Fxp_C_Model/Release/*
 *.map
 Scripts/.idea/*
 Scripts/__pycache__/*

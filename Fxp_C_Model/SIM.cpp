@@ -92,7 +92,7 @@ char* get_optarg()
 
 int8_t parse_command_line(int argc, char * const argv[])
 {
-char ValidOptions[] = "s:d:r:h";     // List of valid option switches.  The ':' after a character means it has must have an argument after it
+char ValidOptions[] = "s:d:r:f:h";     // List of valid option switches.  The ':' after a character means it has must have an argument after it
 int option;
 int8_t ExitVal = 0;
 
