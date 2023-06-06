@@ -250,7 +250,7 @@ int24_t TC;
 
 #define     WDRC_RESERVE_GAIN       to_frac16(-7.0)
 
-#define     NUM_WDRC_CHANNELS       8
+#define     WDRC_NUM_CHANNELS       8
 
 #define     FBC_COEFFS_PER_BIN      4
 #define     FBC_COEFF_SPACING       2       // Should be either 1 (continguous coeffs) or 2 (zero between each coeff)
@@ -286,8 +286,6 @@ extern strWDRC  WDRC;
 extern strFBC   FBC;
 extern strNR    NR;
 
-
-void FW_Param_Init();
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Simulation helper includes, references

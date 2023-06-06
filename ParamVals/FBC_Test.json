@@ -1,7 +1,7 @@
 {
 	"SYS": {
 		"0": {
-			"InpMicGain": 2.0,
+			"InpMicGain": 0.0,
 			"AgcoThresh": 105.0,
 			"OutpRcvrGain": 0.0
 		},

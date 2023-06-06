@@ -30,7 +30,7 @@ uint8_t i;
 
     WDRC.CurrentChannel = 0;     // Reset
 // Set energies, levels to low values.  Reset gains to unity in log2 (0 --> 1.0 linear)
-    for (i = 0; i < NUM_WDRC_CHANNELS; i++)
+    for (i = 0; i < WDRC_NUM_CHANNELS; i++)
     {
         WDRC.ChanEnergyLog2[i] = to_frac16(-40.0);
         WDRC.LevelLog2[i] = to_frac16(-40.0);
@@ -40,7 +40,7 @@ uint8_t i;
         WDRC.BinGainLog2[i] = 0;
 
 // Convert parameters to working values
-    for (i = 0; i < NUM_WDRC_CHANNELS; i++)
+    for (i = 0; i < WDRC_NUM_CHANNELS; i++)
     {
         WDRC.Gain[i][0] = WDRC_Params.Profile.Gain[i][0];
         WDRC.Gain[i][1] = WDRC_Params.Profile.Gain[i][1];
@@ -144,7 +144,7 @@ int24_t i;
 
     // Go to next bin or wrap around
         WDRC.CurrentChannel = CurCh+1;
-        if (WDRC.CurrentChannel >= NUM_WDRC_CHANNELS)
+        if (WDRC.CurrentChannel >= WDRC_NUM_CHANNELS)
         {
             WDRC.CurrentChannel = 0;
         }

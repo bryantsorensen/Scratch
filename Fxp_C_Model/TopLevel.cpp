@@ -81,10 +81,11 @@ int8_t RetVal = 0;
 const double Scale24 = 0.00000011920928955078125;   // 2^-23
 int k;
 
-    SIM_Init();     // get elements of simulation initialized
-
 //++++++++++++++++++++
 // Firmware
+
+// Initialize all parameters (in actual FW, this is call to EEPROM read)
+    FW_Param_Init();
 
 // Initialize all modules
     SYS_Init();
@@ -94,6 +95,8 @@ int k;
 
 //++++++++++++++++++++
 // Simulation
+
+    SIM_Init();     // get elements of simulation initialized; call AFTER init of parameters
 
 // Do simulation, going through all blocks
     for (CurBlock = 0; CurBlock < BlocksInSim; CurBlock++)
@@ -135,6 +138,8 @@ int k;
         for (k = 0; k < BLOCK_SIZE; k++)
             Buf[k] = (int32_t)(round(SYS.OutBuf[k]/Scale24));       // This needs to be replaced with sending data to audio I/O block
         WavOutp.WriteNVals(8, Buf);      // SIM ONLY
+
+        SIM_LogFiles();
     }
 
 //++++++++++++++++++++
@@ -143,7 +148,7 @@ int k;
 // Close all files
     WavInp.CloseFile();
     WavOutp.CloseFile();
-    SIM_CloseWola();
+    SIM_CloseSim();
 
 // Exit the program
     exit(0);

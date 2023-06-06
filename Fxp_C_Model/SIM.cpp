@@ -151,18 +151,16 @@ static inline void SIM_WolaInit()
 }
 
 
-void SIM_Init()
+static void SIM_FB_Init()
 {
 unsigned i;
 FILE* fbf;
 double fileval;
 
-    // Wola handle initialization. SIM ONLY! Normally done by compile-time config for HEAR code
-    SIM_WolaInit();
     for (i = 0; i < FB_SIM_TAPS; i++)
         SIM.OutBufDelay[i] = to_frac24(0);
 
-    // Set up counters
+    // Set up simulation counters
     SIM.CurOpIdx = 0;
     SIM.CurSample = 0;
 
@@ -182,21 +180,87 @@ double fileval;
     else
     {
     // FORMAT (all double values): transition start in seconds, FIR1 values, FIR2 values
+    // Scale the FIR coefficients with any desired gain
         fscanf_s(fbf, "%le", &fileval);
         SIM.TransitionStart = (uint32_t)(fileval*(double)BASEBAND_SAMPLE_RATE);
         SIM.TransitionEnd = SIM.TransitionStart + (uint32_t)FB_SIM_TRNSTION_SMPLS_DBL;
         for (i = 0; i < FB_SIM_TAPS; i++)
         {
-            fscanf_s(fbf, "%le", &fileval);
-            SIM.FB_FIR1[i] = to_frac24(fileval);
+            fscanf_s(fbf, "%le", &(SIM.FB_FIR1[i]));
         }
         for (i = 0; i < FB_SIM_TAPS; i++)
         {
-            fscanf_s(fbf, "%le", &fileval);
-            SIM.FB_FIR2[i] = to_frac24(fileval);
+            fscanf_s(fbf, "%le", &(SIM.FB_FIR2[i]));
         }
         fclose(fbf);
     }
+}
+
+
+// Call this setup after parameters have been initialized
+// Enable file output for modules that are enabled.
+
+static void SIM_OutputFileSetup()
+{
+unsigned fidx;
+char fname[256];
+
+// Open SYS files (always)
+    sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_Error.csv");       fopen_s(&SIM.SysFiles[SysError], fname, "w");     // if returns NULL, let error occur when trying to write to the file
+    sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_FwdGainLog2.csv"); fopen_s(&SIM.SysFiles[SysFwdGainL2], fname, "w");
+    sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_AgcoGainLog2");    fopen_s(&SIM.SysFiles[SysAgcoGainL2], fname, "w");
+
+// Open WDRC files
+    if (WDRC_Params.Profile.Enable)
+    {
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "WDRC_LevelLog2.csv");      fopen_s(&SIM.WdrcFiles[WdrcLevelL2], fname, "w");
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "WDRC_BinGainLog2.csv");    fopen_s(&SIM.WdrcFiles[WdrcBinGainL2], fname, "w");
+    }
+    else
+    {
+        for (fidx = 0; fidx < NUM_WDRC_FILES; fidx++)
+            SIM.WdrcFiles[fidx] = NULL;
+    }
+
+// Open FBC files
+    if (FBC_Params.Profile.Enable)
+    {
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "FBC_Coeffs.csv");      fopen_s(&SIM.FbcFiles[FbcCoeffs], fname, "w");
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "FBC_AdaptShift.csv");  fopen_s(&SIM.FbcFiles[FbcAdaptShift], fname, "w");
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "FBC_Sinusoid.csv");    fopen_s(&SIM.FbcFiles[FbcSinusoid], fname, "w");
+    }
+    else
+    {
+        for (fidx = 0; fidx < NUM_FBC_FILES; fidx++)
+            SIM.FbcFiles[fidx] = NULL;
+    }
+
+// Open NR files
+    if (NR_Params.Profile.Enable)
+    {
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "NR_NoiseEst.csv");     fopen_s(&SIM.NrFiles[NrNoiseEst], fname, "w");
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "NR_SpeechEst.csv");    fopen_s(&SIM.NrFiles[NrSpeechEst], fname, "w");
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "NR_SnrEst.csv");       fopen_s(&SIM.NrFiles[NrSNREst], fname, "w");
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "NR_BinGainLog2.csv");  fopen_s(&SIM.NrFiles[NrBinGainL2], fname, "w");
+    }
+    else
+    {
+        for (fidx = 0; fidx < NUM_NR_FILES; fidx++)
+            SIM.NrFiles[fidx] = NULL;
+    }
+}
+
+
+void SIM_Init()
+{
+    // Wola handle initialization. SIM ONLY! Normally done by compile-time config for HEAR code
+    SIM_WolaInit();
+
+    // Set up feedback simulation
+    SIM_FB_Init();
+
+    // Set up the simulation files
+    SIM_OutputFileSetup();
 }
 
 
@@ -206,51 +270,131 @@ void SIM_Feedback(frac24_t* inBuf, frac24_t* outBuf)
 unsigned sample;
 unsigned tap;
 unsigned k;     // output buffer delay line index
-accum_t Acc1, Acc2;
-frac24_t F1, F2;
-frac24_t S1, S2;
-frac24_t FBSig;
+double F1, F2;      // Use doubles for simulation
+double S1, S2;
+double FBSig;
+double CombinedSig;
 
     for (sample = 0; sample < BLOCK_SIZE; sample++)
     {
-        Acc1 = to_accum(0);
-        Acc2 = to_accum(0);
+        F1 = 0.0;
+        F2 = 0.0;
         SIM.OutBufDelay[SIM.CurOpIdx] = outBuf[sample];    // overwrite oldest with new sample
         for (tap = 0, k = SIM.CurOpIdx; tap < FB_SIM_TAPS; tap++)
         {
-            Acc1 += SIM.FB_FIR1[tap]*SIM.OutBufDelay[k];
-            Acc2 += SIM.FB_FIR2[tap]*SIM.OutBufDelay[k];
+            F1 += (double)(SIM.FB_FIR1[tap])*SIM.OutBufDelay[k];
+            F2 += (double)(SIM.FB_FIR2[tap])*SIM.OutBufDelay[k];
             k = (k - 1) & FB_SIM_TAPS_MASK;     // go back in time in out buffer delay line
         }
         SIM.CurOpIdx = (SIM.CurOpIdx+1) & FB_SIM_TAPS_MASK;   // move to next sample in buffer, forward in time
 
         // Create the mixing factors
         if (SIM.CurSample < SIM.TransitionStart)
-            S1 = to_frac24(1.0);
+            S1 = 1.0;
         if ((SIM.CurSample >= SIM.TransitionStart) && (SIM.CurSample < SIM.TransitionEnd))
         {
-            S1 = to_frac24(1.0) - to_frac24((double)(SIM.CurSample - SIM.TransitionStart)/FB_SIM_TRNSTION_SMPLS_DBL);
-            S1 = (S1 < to_frac24(0.0)) ? to_frac24(0.0) : S1;       // Catch edge case, keep scale positive
+            S1 = 1.0 - ((double)(SIM.CurSample - SIM.TransitionStart)/FB_SIM_TRNSTION_SMPLS_DBL);
+            S1 = (S1 < 0.0) ? 0.0 : S1;       // Catch edge case, keep scale positive
         }
         else    // After TransitionEnd
-            S1 = to_frac24(0.0);
-        S2 = to_frac24(1.0) - S1;
+            S1 = 0.0;
+        S2 = 1.0 - S1;
 
-        // Combine Acc1 and Acc2 using scale factors, into feedback signal; add back into input buffer
-        F1 = rnd_sat24(Acc1);
-        F2 = rnd_sat24(Acc2);
-        Acc1 = F1*S1 + F2*S2;   FBSig = rnd_sat24(Acc1);
-        inBuf[sample] = inBuf[sample] + FBSig;
+        // Combine F1 and F2 into feedback signal using scale factors; saturate; add back into input buffer
+        FBSig = F1*S1 + F2*S2;
+        CombinedSig = (double)(inBuf[sample]) + FBSig;
+        CombinedSig = (CombinedSig >= 1.0) ? (1.0-1.0e-23) : CombinedSig;
+        CombinedSig = (CombinedSig < -1.0) ? -1.0 : CombinedSig;
+        inBuf[sample] = to_frac24(CombinedSig);
 
         SIM.CurSample++;        // Update simulation sample count
     }
 }
 
 
-void SIM_CloseWola()
+// TODO: Update write functions to handle fixed-point types
+void SIM_WriteComplex24 (FILE* fp, Complex24* Cval, unsigned NumVals)
+{
+unsigned i = 0;     // init to 0 for NumVals = 1 case
+
+    if (fp != NULL)
+    {
+        for (; i < (NumVals-1); i++)
+            fprintf(fp, "%2.12e+%2.12ej, ", Cval[i].Real(), Cval[i].Imag());
+        fprintf(fp, "%2.12e+%2.12ej\n", Cval[i].Real(), Cval[i].Imag());
+    }
+}
+
+void SIM_Write16 (FILE* fp, frac16_t* Cval, unsigned NumVals)
+{
+unsigned i = 0;     // init to 0 for NumVals = 1 case
+
+    if (fp != NULL)
+    {
+        for (; i < (NumVals-1); i++)
+            fprintf(fp, "%2.12e, ", Cval[i]);
+        fprintf(fp, "%2.12e\n", Cval[i]);
+    }
+}
+
+void SIM_WriteInt (FILE* fp, int24_t* Cval, unsigned NumVals)
+{
+unsigned i = 0;     // init to 0 for NumVals = 1 case
+
+    if (fp != NULL)
+    {
+        for (; i < (NumVals-1); i++)
+            fprintf(fp, "%d, ", Cval[i]);
+        fprintf(fp, "%d\n", Cval[i]);
+    }
+
+}
+
+
+void SIM_LogFiles()
+{
+    SIM_WriteComplex24 (SIM.SysFiles[SysError], SYS.Error, WOLA_NUM_BINS);
+    SIM_Write16 (SIM.SysFiles[SysFwdGainL2], SYS.FwdGainLog2, WOLA_NUM_BINS);
+    SIM_Write16 (SIM.SysFiles[SysAgcoGainL2], &SYS.AgcoGainLog2, 1);
+
+    SIM_Write16 (SIM.WdrcFiles[WdrcLevelL2], WDRC.LevelLog2, WDRC_NUM_CHANNELS);
+    SIM_Write16 (SIM.WdrcFiles[WdrcBinGainL2], WDRC.BinGainLog2, WOLA_NUM_BINS);
+
+    SIM_WriteComplex24 (SIM.FbcFiles[FbcCoeffs], &FBC.Coeffs[0][0], (WOLA_NUM_BINS*FBC_COEFFS_PER_BIN));
+    SIM_WriteInt (SIM.FbcFiles[FbcAdaptShift], FBC.AdaptShift, WOLA_NUM_BINS);
+    SIM_WriteComplex24 (SIM.FbcFiles[FbcSinusoid], FBC.Sinusoid, 1);
+
+    SIM_Write16 (SIM.NrFiles[NrNoiseEst], NR.NoiseEst, WOLA_NUM_BINS);
+    SIM_Write16 (SIM.NrFiles[NrSpeechEst], NR.SpeechEst, WOLA_NUM_BINS);
+    SIM_Write16 (SIM.NrFiles[NrSNREst], NR.SNREst, WOLA_NUM_BINS);
+    SIM_Write16 (SIM.NrFiles[NrBinGainL2], NR.BinGainLog2, WOLA_NUM_BINS);
+}
+
+
+static void SIM_CloseOutFiles(FILE** FileList, unsigned NumFiles)
+{
+unsigned fidx;
+
+    for (fidx = 0; fidx < NumFiles; fidx++)
+    {
+        if (FileList[fidx] != NULL)
+        {
+            fclose(FileList[fidx]);
+            FileList[fidx] = NULL;
+        }
+    }
+}
+
+
+void SIM_CloseSim()
 {
     WolaClose(WOLASim.FwdWolaHandle);
     WolaClose(WOLASim.RevWolaHandle);
+
+    SIM_CloseOutFiles(SIM.SysFiles,  NUM_SYS_FILES);
+    SIM_CloseOutFiles(SIM.WdrcFiles, NUM_WDRC_FILES);
+    SIM_CloseOutFiles(SIM.FbcFiles,  NUM_FBC_FILES);
+    SIM_CloseOutFiles(SIM.NrFiles,   NUM_NR_FILES);
 }
 
 

@@ -44,18 +44,18 @@
 struct strWDRC
 {
     int24_t     CurrentChannel;
-    frac16_t    ChanEnergyLog2[NUM_WDRC_CHANNELS];      // Keep track for debug only
-    frac16_t    LevelLog2[NUM_WDRC_CHANNELS];
+    frac16_t    ChanEnergyLog2[WDRC_NUM_CHANNELS];      // Keep track for debug only
+    frac16_t    LevelLog2[WDRC_NUM_CHANNELS];
     frac16_t    BinGainLog2[WOLA_NUM_BINS];
-    frac16_t    ChanGainLog2[NUM_WDRC_CHANNELS];        // Keep track for debug only
+    frac16_t    ChanGainLog2[WDRC_NUM_CHANNELS];        // Keep track for debug only
     // Bin boundaries are const, known at build time
-    const int24_t     ChannelStartBin[NUM_WDRC_CHANNELS];
-    const int24_t     ChannelLastBin[NUM_WDRC_CHANNELS];
+    const int24_t     ChannelStartBin[WDRC_NUM_CHANNELS];
+    const int24_t     ChannelLastBin[WDRC_NUM_CHANNELS];
 
 // WDRC working values
-    frac16_t    Gain[NUM_WDRC_CHANNELS][NUM_WDRC_REGIONS];
-    frac16_t    Thresh[NUM_WDRC_CHANNELS][NUM_WDRC_REGIONS];
-    frac16_t    Slope[NUM_WDRC_CHANNELS][NUM_WDRC_REGIONS];
+    frac16_t    Gain[WDRC_NUM_CHANNELS][NUM_WDRC_REGIONS];
+    frac16_t    Thresh[WDRC_NUM_CHANNELS][NUM_WDRC_REGIONS];
+    frac16_t    Slope[WDRC_NUM_CHANNELS][NUM_WDRC_REGIONS];
 
     strWDRC();              // Treating struct as public class; make constructor and destructor
     ~strWDRC() {};

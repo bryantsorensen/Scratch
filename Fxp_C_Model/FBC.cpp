@@ -34,7 +34,7 @@ we would slow down adaptation all the time.  Also, if we use it in target as uni
 then we could miss gains that are turned down as it swamps their negative gain (is this a bad thing?)
 */
     BbTargetGainLog2 = SYS_Params.Persist.InpMicGain + SYS_Params.Profile.AgcoGain;
-    for (CurCh = 0; CurCh < NUM_WDRC_CHANNELS; CurCh++)
+    for (CurCh = 0; CurCh < WDRC_NUM_CHANNELS; CurCh++)
     {
     // Don't include NR; it is unity by default at reset or rest
 
