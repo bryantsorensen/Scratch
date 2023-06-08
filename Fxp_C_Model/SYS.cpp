@@ -50,6 +50,10 @@ int24_t tap;
     SYS.AgcoLevelLog2 = to_frac16(-40.0);
     SYS.AgcoGainLog2 = SYS_Params.Profile.AgcoGain;
 
+    // WOLA initialization with windows & stacking mode
+    WOLA_Init(&SYS.FwdWOLA, WOLA_STACKING, AnalysisWin, SynthesisWin);
+    WOLA_Init(&SYS.RevWOLA, WOLA_STACKING, AnalysisWin, NULL);
+
     // Also initialize params-only EQ module
     if (!EQ_Params.Profile.Enable)
     {   
@@ -76,20 +80,18 @@ int24_t i;
 
 void SYS_HEAR_WolaFwdAnalysis()
 {
-WolaComplex AnaOut[WOLA_N];
 int24_t i;
 frac24_t Ar, Ai;
 
-    WolaAnalyze(WOLASim.FwdWolaHandle, SYS.FwdAnaIn, AnaOut);     // Ignoring return value
+    WOLA_Analyze(&SYS.FwdWOLA, SYS.FwdAnaIn, SYS.FwdAnaBuf);     // Ignoring return value
 
     if (WOLA_STACKING == WOLA_STACKING_EVEN)
-        AnaOut[0].i = 0.0;                  // Clear out Nyquist frequency to simplify things for Even stacking
+        SYS.FwdAnaBuf[0].SetImag(0.0);                  // Clear out Nyquist frequency to simplify things for Even stacking
 
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
-        Ar = to_frac24(AnaOut[i].r);    Ai = to_frac24(AnaOut[i].i);
+        Ar = to_frac24(SYS.FwdAnaBuf[i].Real());    Ai = to_frac24(SYS.FwdAnaBuf[i].Imag());
         SYS.MicEnergy[i] = sat48(Ar*Ar + Ai*Ai);
-        SYS.FwdAnaBuf[i].SetVal(Ar, Ai);  // In case we need conversion, WolaComplex --> Complex24, for sim
     }   
     
 }
@@ -97,7 +99,6 @@ frac24_t Ar, Ai;
 
 void SYS_HEAR_WolaRevAnalysis()
 {
-WolaComplex AnaOut[WOLA_N];
 int24_t i;
 int24_t dp;     // Delay pointer
 frac24_t Ar, Ai;
@@ -111,16 +112,15 @@ frac24_t Ar, Ai;
     }
     SYS.RevDlyPtr = dp;
 
-    WolaAnalyze(WOLASim.RevWolaHandle, SYS.RevAnaIn, AnaOut);     // Ignoring return value
+    WOLA_Analyze(&SYS.RevWOLA, SYS.RevAnaIn, SYS.RevAnaBuf[0]);     // Ignoring return value
 
     if (WOLA_STACKING == WOLA_STACKING_EVEN)
-        AnaOut[0].i = 0.0;                  // Clear out Nyquist frequency to simplify things for Even stacking
+        SYS.RevAnaBuf[0][0].SetImag(0.0);                  // Clear out Nyquist frequency to simplify things for Even stacking
 
 // TODO: Correctly emulate analysis buffer
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
-        Ar = to_frac24(AnaOut[i].r);    Ai = to_frac24(AnaOut[i].i);
-        SYS.RevAnaBuf[0][i].SetVal(Ar, Ai);    // In case we need conversion, WolaComplex --> Complex24, for sim
+        Ar = SYS.RevAnaBuf[0][i].Real();    Ai = SYS.RevAnaBuf[0][i].Imag();
         SYS.RevEnergy[i] = sat48(Ar*Ar + Ai*Ai);
     }   
     
@@ -167,16 +167,7 @@ int24_t i;
 
 void SYS_HEAR_WolaFwdSynthesis()
 {
-WolaComplex SynIn[WOLA_N];
-int24_t i;
-
-    for (i = 0; i < WOLA_NUM_BINS; i++)     // In case we need conversion, Complex24 --> WolaComplex, for sim
-    {
-        SynIn[i].r = SYS.FwdSynBuf[i].Real();
-        SynIn[i].i = SYS.FwdSynBuf[i].Imag();
-    }   
-    WolaSynthesize(WOLASim.FwdWolaHandle, SynIn, SYS.FwdSynOut);  // Ignore return value
-    
+    WOLA_Synthesize(&SYS.FwdWOLA, SYS.FwdSynBuf, SYS.FwdSynOut);
 }
 
 

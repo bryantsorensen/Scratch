@@ -11,16 +11,6 @@
 
 #include "Common.h"
 
-
-// Constructor; used to initialize const values
-strWDRC::strWDRC() : ChannelStartBin{   WDRC_START_BIN_CHAN0, WDRC_START_BIN_CHAN1, WDRC_START_BIN_CHAN2, WDRC_START_BIN_CHAN3,
-                                        WDRC_START_BIN_CHAN4, WDRC_START_BIN_CHAN5, WDRC_START_BIN_CHAN6, WDRC_START_BIN_CHAN7},
-                    ChannelLastBin {(WDRC_START_BIN_CHAN1-1), (WDRC_START_BIN_CHAN2-1), (WDRC_START_BIN_CHAN3-1), (WDRC_START_BIN_CHAN4-1),
-                                    (WDRC_START_BIN_CHAN5-1), (WDRC_START_BIN_CHAN6-1), (WDRC_START_BIN_CHAN7-1), (WOLA_NUM_BINS-1)}
-{
-}
-
-
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Initialization at boot or profile switch
 

@@ -39,7 +39,7 @@ repo_dir = os.getenv('FW_REPO_DIR')
 
 c_model_name = 'Fxp_C_Model'
 build_config = 'Release'    # Alternatives: Release, Debug
-build_platform = 'Win32'    # Alternatives: Win32, x64
+build_platform = 'x64'      # Alternatives: Win32, x64
 
 thisdir = os.path.dirname(__file__)
 testfilename = os.path.basename(__file__)

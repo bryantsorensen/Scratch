@@ -92,7 +92,6 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>wola.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>Fxp_C_Model.map</MapFileName>
       <MapExports>true</MapExports>
@@ -113,7 +112,6 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>wola.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -124,7 +122,6 @@
       <OmitFramePointers>false</OmitFramePointers>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>wola.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>Fxp_C_Model.map</MapFileName>
       <MapExports>true</MapExports>
@@ -146,7 +143,6 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>wola.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>Fxp_C_Model.map</MapFileName>
       <MapExports>true</MapExports>
@@ -162,7 +158,7 @@
     <ClInclude Include="SYS.h" />
     <ClInclude Include="WAV_Utils.h" />
     <ClInclude Include="WDRC.h" />
-    <ClInclude Include="wola.h" />
+    <ClInclude Include="WOLA.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FBC.cpp" />
@@ -172,6 +168,7 @@
     <ClCompile Include="TopLevel.cpp" />
     <ClCompile Include="WAV_Utils.cpp" />
     <ClCompile Include="WDRC.cpp" />
+    <ClCompile Include="WOLA.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -140,17 +140,6 @@ int8_t ExitVal = 0;
 //++++++++++++++++++++++++++++++++++++++++++++++++++
 // Audio processing simulation functions
 
-static inline void SIM_WolaInit()
-{
-    WOLASim.FwdWolaHandle = WolaInit(WOLA_LA, WOLA_LS, WOLA_R, WOLA_N, WOLA_STACKING);
-//    WolaSetAnaWin(WOLASim.FwdWolaHandle, WolaAnaWin, WOLA_N);     // Comment out to leave default window
-//    WolaSetSynWin(WOLASim.FwdWolaHandle, WolaSynWin, WOLA_N);
-
-    WOLASim.RevWolaHandle = WolaInit(WOLA_LA, WOLA_LS, WOLA_R, WOLA_N, WOLA_STACKING);
-//    WolaSetAnaWin(WOLASim.RevWolaHandle, WolaAnaWin, WOLA_N);
-}
-
-
 static void SIM_FB_Init()
 {
 unsigned i;
@@ -257,9 +246,6 @@ char fname[256];
 
 void SIM_Init()
 {
-    // Wola handle initialization. SIM ONLY! Normally done by compile-time config for HEAR code
-    SIM_WolaInit();
-
     // Set up feedback simulation
     SIM_FB_Init();
 
@@ -392,9 +378,6 @@ unsigned fidx;
 
 void SIM_CloseSim()
 {
-    WolaClose(WOLASim.FwdWolaHandle);
-    WolaClose(WOLASim.RevWolaHandle);
-
     SIM_CloseOutFiles(SIM.SysFiles,  NUM_SYS_FILES);
     SIM_CloseOutFiles(SIM.WdrcFiles, NUM_WDRC_FILES);
     SIM_CloseOutFiles(SIM.FbcFiles,  NUM_FBC_FILES);

@@ -49,15 +49,10 @@ struct strSYS
     Complex24   RevAnaBuf[WOLA_NUM_BINS][NUM_FBC_ANA_TAPS];
     frac48_t    RevEnergy[WOLA_NUM_BINS];
 
+    strWOLA     FwdWOLA;
+    strWOLA     RevWOLA;
 };
 
-// TODO: Replace this simulation WOLA structure with a NULL / empty structure
-struct strWOLA
-{
-    uint32_t    FwdWolaHandle;
-    uint32_t    RevWolaHandle;
-
-};
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Function prototypes

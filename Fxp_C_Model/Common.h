@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -238,9 +239,15 @@ int24_t TC;
 #define     BASEBAND_SAMPLE_RATE    24000
 #define     SUBBAND_SAMPLE_RATE     (BASEBAND_SAMPLE_RATE/BLOCK_SIZE)
 
-#define     WOLA_LA                 64
-#define     WOLA_LS                 64
-#define     WOLA_N                  64
+#define     WOLA_MAX_SIZE_LOG2      11
+#define     WOLA_MAX_SIZE           (1 << WOLA_MAX_SIZE_LOG2)
+
+#define     WOLA_LOG2_LA            6
+#define     WOLA_LA                 (1<<WOLA_LOG2_LA)
+#define     WOLA_LOG2_LS            6
+#define     WOLA_LS                 (1<<WOLA_LOG2_LS)
+#define     WOLA_LOG2_N             6
+#define     WOLA_N                  (1<<WOLA_LOG2_N)
 #define     WOLA_NUM_BINS           (WOLA_N/2)
 #define     WOLA_R                  BLOCK_SIZE
 #define     WOLA_STACKING_EVEN      0
@@ -248,6 +255,7 @@ int24_t TC;
 #define     WOLA_STACKING           WOLA_STACKING_EVEN
 #define     FILTERBANK_GAIN_LOG2    to_frac16(-0.4432)
 
+#define     BITREV_SHIFT            (WOLA_MAX_SIZE_LOG2 - WOLA_LOG2_N)
 #define     WDRC_RESERVE_GAIN       to_frac16(-7.0)
 
 #define     WDRC_NUM_CHANNELS       8
@@ -275,7 +283,7 @@ extern strParams_NR     NR_Params;
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Include module headers, declare globals
 
-#include "wola.h"
+#include "WOLA.h"
 #include "SYS.h"
 #include "WDRC.h"
 #include "FBC.h"
