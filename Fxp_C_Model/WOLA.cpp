@@ -24,21 +24,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Functions
 
-// Re-order the input buffer into the output buffer using bit-reversed addressing
-static inline void BitReverseBuffer(Complex24* inBuf, Complex24* outBuf, int16_t Log2N)
-{
-int16_t N = (1 << Log2N);
-int16_t i;
-int16_t Shift = WOLA_MAX_SIZE_LOG2 - Log2N;
-
-    for (i = 0; i < N; i++)
-    {
-        outBuf[i] = inBuf[BitRevTable[i] >> Shift];
-    }
-}
-
-
-static Complex24 TwidTable(int16_t idx, int16_t N, bool Inv)
+static Complex24 TwiddleFactor(int16_t idx, int16_t N, bool Inv)
 {
 frac24_t R, I;
 Complex24 Ret;
@@ -70,6 +56,9 @@ int16_t iQ,    iL,    iM;
 int16_t iA,    iB;
 double fRealTemp, fImagTemp;
 Complex24 Wq;
+double StageScale;
+
+    StageScale = (Inv) ? 0.5 : 1.0;     // Scale each stage when doing inverse
 
     iN = 1 << iLog2N;
     iL = 1;
@@ -81,7 +70,7 @@ Complex24 Wq;
         for (iCnt2 = 0; iCnt2 < iM; ++iCnt2)
         {
             iA = iCnt2;
-            Wq = TwidTable(iQ, iN, Inv);
+            Wq = TwiddleFactor(iQ, iN, Inv);
 
             for (iCnt3 = 0; iCnt3 < iL; ++iCnt3)
             {
@@ -90,12 +79,12 @@ Complex24 Wq;
                 /* Butterfly: 10 FOP, 4 FMUL, 6 FADD */
 
                 fRealTemp      = sFFT[iA].Real() - sFFT[iB].Real();
-                sFFT[iA].SetReal(sFFT[iA].Real() + sFFT[iB].Real());
+                sFFT[iA].SetReal((sFFT[iA].Real() + sFFT[iB].Real())*StageScale);
                 fImagTemp      = sFFT[iA].Imag() - sFFT[iB].Imag();
-                sFFT[iA].SetImag(sFFT[iA].Imag() + sFFT[iB].Imag());
+                sFFT[iA].SetImag((sFFT[iA].Imag() + sFFT[iB].Imag())*StageScale);
 
-                sFFT[iB].SetReal(fRealTemp * Wq.Real() - fImagTemp * Wq.Imag());
-                sFFT[iB].SetImag(fImagTemp * Wq.Real() + fRealTemp * Wq.Imag());
+                sFFT[iB].SetReal((fRealTemp * Wq.Real() - fImagTemp * Wq.Imag())*StageScale);
+                sFFT[iB].SetImag((fImagTemp * Wq.Real() + fRealTemp * Wq.Imag())*StageScale);
 
                 iA += (iM<<1);  // iA + 2*iM;
             }
@@ -122,6 +111,9 @@ int16_t iQ,    iL,   iM;
 int16_t iA,    iB;
 double fRealTemp, fImagTemp;
 Complex24 Wq;
+double StageScale;
+
+    StageScale = (Inv) ? 0.5 : 1.0;     // Scale each stage when doing inverse
 
     iN = 1 << iLog2N;
     iL = iN >> 1;   // iN/2
@@ -133,7 +125,7 @@ Complex24 Wq;
         for (iCnt2 = 0; iCnt2 < iM; ++iCnt2)
         {
             iA = iCnt2;
-            Wq = TwidTable(iQ, iN, Inv);
+            Wq = TwiddleFactor(iQ, iN, Inv);
 
             for (iCnt3 = 0; iCnt3 < iL; ++iCnt3)
             {
@@ -144,10 +136,10 @@ Complex24 Wq;
                 fRealTemp = sFFT[iB].Real() * Wq.Real() - sFFT[iB].Imag() * Wq.Imag();
                 fImagTemp = sFFT[iB].Real() * Wq.Imag() + sFFT[iB].Imag() * Wq.Real();
                 // Do these in order to allow in-place calcs
-                sFFT[iB].SetReal(sFFT[iA].Real() - fRealTemp);
-                sFFT[iA].SetReal(sFFT[iA].Real() + fRealTemp);
-                sFFT[iB].SetImag(sFFT[iA].Imag() - fImagTemp);
-                sFFT[iA].SetImag(sFFT[iA].Imag() + fImagTemp);
+                sFFT[iB].SetReal((sFFT[iA].Real() - fRealTemp)*StageScale);
+                sFFT[iA].SetReal((sFFT[iA].Real() + fRealTemp)*StageScale);
+                sFFT[iB].SetImag((sFFT[iA].Imag() - fImagTemp)*StageScale);
+                sFFT[iA].SetImag((sFFT[iA].Imag() + fImagTemp)*StageScale);
 
                 iA += (iM<<1);  // iA + 2*iM;
             }
@@ -179,6 +171,7 @@ int i;
 int j;
 int TimeBlocks = (WOLA_N/WOLA_LA);      // Required this be integer ratio
 uint16_t bra;    // Bit reversed address
+int16_t CircShift;
 
     // Simulate movement of the buffer; don't worry about being efficient, this is simulation of what happens in HEAR
     // Sample 0 --> 8
@@ -187,10 +180,10 @@ uint16_t bra;    // Bit reversed address
 
 // TODO: Add sign sequencing for odd stacking
 
-    for (i = (WOLA_LA-1); i >= WOLA_R; i--)
-        sWOLA->AnaBuf[i] = sWOLA->AnaBuf[i-WOLA_R];     // Shift samples up in buffer
-    for (i = (WOLA_R-1); i >= 0; i--)
-        sWOLA->AnaBuf[i] = AnaIn[i];
+    for (i = WOLA_R; i < WOLA_LA; i++)
+        sWOLA->AnaBuf[i-WOLA_R] = sWOLA->AnaBuf[i];     // Shift samples down in buffer
+    for (i = 0; i < WOLA_R; i++)
+        sWOLA->AnaBuf[WOLA_LA-WOLA_R+i] = AnaIn[i];
 
     // Do windowing
     for (i = 0; i < WOLA_LA; i++)
@@ -205,16 +198,18 @@ uint16_t bra;    // Bit reversed address
 
     // Circular shift by WOLA_R samples (again, emulated w/o efficiency)
     // Also do bit reversal addressing at the same time
+    CircShift = (sWOLA->AnaBlockCnt*WOLA_R)&(WOLA_N-1);
     for (i = 0; i < WOLA_N; i++)
     {
         bra = BitRevTable[i] >> BITREV_SHIFT;
         if (WOLA_STACKING == WOLA_STACKING_EVEN)
-            sWOLA->FFTBuf[bra].SetVal(sWOLA->AnaWinBuf[(i+WOLA_R)&(WOLA_N-1)], to_frac24(0.0));
+            sWOLA->FFTBuf[bra].SetVal(sWOLA->AnaWinBuf[(i-CircShift)&(WOLA_N-1)], to_frac24(0.0));
         else
         {
 // TODO: Add frequency shift for odd stacking
         }
     }
+    sWOLA->AnaBlockCnt++;
 
     // Take forward FFT
     R2FFTdit(sWOLA->FFTBuf, WOLA_LOG2_N, false);
@@ -232,6 +227,7 @@ int16_t i;
 uint16_t bra;
 uint16_t j;
 int TimeBlocks = (WOLA_N/WOLA_LS);      // Required this be integer ratio
+int16_t CircShift;
 
     // Copy input data to work buffer
     // Separate DC and Nyquist from bin[0] of input to their respective bins
@@ -240,19 +236,28 @@ int TimeBlocks = (WOLA_N/WOLA_LS);      // Required this be integer ratio
     for (i = 1; i < WOLA_NUM_BINS; i++)
         sWOLA->FFTBuf[i] = SynIn[i];
     for (i = (WOLA_NUM_BINS+1); i < WOLA_N; i++)     // Complete the complex conjugate symmetry
-        sWOLA->FFTBuf[i].SetVal(sWOLA->FFTBuf[WOLA_N-i].Real(), -sWOLA->FFTBuf[WOLA_N-i].Imag());
+        sWOLA->FFTBuf[i] = conj(sWOLA->FFTBuf[WOLA_N-i]);
 
     R2FFTdif(sWOLA->FFTBuf, WOLA_LOG2_N, true);     // Take inverse FFT
 
 // TODO: Add frequency shift for odd stacking
 
-    // Do circular shift, combine with bit reversal; also clear out imag part (which should already be 0)
+    // Apply bit reverse; also clear out imag part (which should already be 0)
+    // For space - store temporarily into imag part
     for (i = 0; i < WOLA_N; i++)
     {
         bra = BitRevTable[i] >> BITREV_SHIFT;
-        if (WOLA_STACKING == WOLA_STACKING_EVEN)
-            sWOLA->SynWinBuf[bra] = sWOLA->FFTBuf[(i+WOLA_R)&(WOLA_N-1)].Real();
+        sWOLA->FFTBuf[bra].SetImag(sWOLA->FFTBuf[i].Real());
     }
+
+    // Do circular shift
+    CircShift = (sWOLA->SynBlockCnt*WOLA_R)&(WOLA_N-1);
+    for (i = 0; i < WOLA_N; i++)
+    {
+        if (WOLA_STACKING == WOLA_STACKING_EVEN)
+            sWOLA->SynWinBuf[i] = sWOLA->FFTBuf[(i+CircShift)&(WOLA_N-1)].Imag();   // Grab out of imag part (temp storage)
+    }
+    sWOLA->SynBlockCnt++;
 
     // Replicate the block
     for (i = 0; i < WOLA_N; i++)
@@ -265,18 +270,20 @@ int TimeBlocks = (WOLA_N/WOLA_LS);      // Required this be integer ratio
     for (i = 0; i < WOLA_LS; i++)
         sWOLA->SynWinBuf[i] = sWOLA->SynWinBuf[i] * sWOLA->SynWindow[i];
 
-    // Do overlap-add for blocks of size WOLA_R. 
-    // Do the shift and add in one step; bringing in zeros to is equivalent to copying windowed data
-    for (i = (WOLA_LS-1); i >= WOLA_R; i--)
-        sWOLA->SynOlaBuf[i] = sWOLA->SynOlaBuf[i-WOLA_R] + sWOLA->SynWinBuf[i];
+    // Do overlap-add for blocks of size WOLA_R. Bring in 0s as newest to OLA buffer
+
+    for (i = WOLA_R; i < WOLA_LS; i++)
+        sWOLA->SynOlaBuf[i-WOLA_R] = sWOLA->SynOlaBuf[i];     // Shift samples down in buffer
     for (i = 0; i < WOLA_R; i++)
-        sWOLA->SynOlaBuf[i] = sWOLA->SynWinBuf[i];
+        sWOLA->SynOlaBuf[WOLA_LS-WOLA_R+i] = 0;
+    for (i = 0; i < WOLA_LS; i++)
+        sWOLA->SynOlaBuf[i] += sWOLA->SynWinBuf[i];
 
     // Capture the oldest samples out of the OLA buffer, for output
     if (WOLA_STACKING == WOLA_STACKING_EVEN)
     {
         for (i = 0; i < WOLA_R; i++)
-            SynOut[i] = sWOLA->SynOlaBuf[WOLA_LS-WOLA_R+i];
+            SynOut[i] = sWOLA->SynOlaBuf[i];
     }
 // TODO: Add sign sequencer for odd stacking
     else

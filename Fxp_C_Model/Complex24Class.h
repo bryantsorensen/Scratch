@@ -88,5 +88,14 @@ inline Complex24 operator*(Complex24& a, Complex24& b)
 	return(Ret);
 }
 
+inline Complex24 conj(Complex24& a)
+{
+frac24_t r = a.Real();
+frac24_t i = -a.Imag();
+Complex24 Ret(r, i);
+
+    return (Ret);
+}
+
 #endif  // _CMPLX24_H
 

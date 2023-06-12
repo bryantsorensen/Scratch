@@ -27,6 +27,8 @@ struct strWOLA
     frac24_t*   AnaWindow;
     frac24_t*   SynWindow;
     int8_t      Stacking;
+    uint8_t     AnaBlockCnt;
+    uint8_t     SynBlockCnt;
 
     strWOLA()
     {
@@ -48,6 +50,8 @@ struct strWOLA
             SynWindow = NULL;
         }
         Stacking = -1;      // Init with illegal value
+        AnaBlockCnt = 0;
+        SynBlockCnt = 0;
     };
     ~strWOLA() {};
 };

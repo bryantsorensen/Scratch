@@ -155,9 +155,10 @@ int24_t i;
     // TODO: Add in NR gain
         BinGainLog2 = WDRC.BinGainLog2[i]; // + NR.BinGainLog2[i];
         SYS.DynamicGainLog2[i] = BinGainLog2;    // for use in FBC mu mod by gain
-        BinGainLog2 += EQ_Params.Profile.BinGain[i] + FILTERBANK_GAIN_LOG2;
+        BinGainLog2 += EQ_Params.Profile.BinGain[i] + WOLA_FILTBANK_GAIN_LOG2;
         BinGainLog2 = min16(BinGainLog2, FBC.GainLimLog2[i]);
         SYS.LimitedFwdGain[i] = BinGainLog2;        // For debugging
+BinGainLog2 = to_frac16(0); // TEST WOLA
         SYS.FwdSynBuf[i].SetReal(rnd_sat24(mult_log2(SYS.Error[i].Real(), BinGainLog2)));
         SYS.FwdSynBuf[i].SetImag(rnd_sat24(mult_log2(SYS.Error[i].Imag(), BinGainLog2)));
     }

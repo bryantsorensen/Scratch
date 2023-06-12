@@ -253,7 +253,11 @@ int24_t TC;
 #define     WOLA_STACKING_EVEN      0
 #define     WOLA_STACKING_ODD       1
 #define     WOLA_STACKING           WOLA_STACKING_EVEN
-#define     FILTERBANK_GAIN_LOG2    to_frac16(-0.4432)
+#define     WOLA_FILTBANK_GAIN_LOG2 to_frac16(-0.4432)
+
+#define     WOLA_WINDOW_DEFAULT     0
+#define     WOLA_WINDOW_HANNING     1
+#define     WOLA_WINDOW_TYPE        WOLA_WINDOW_DEFAULT
 
 #define     BITREV_SHIFT            (WOLA_MAX_SIZE_LOG2 - WOLA_LOG2_N)
 #define     WDRC_RESERVE_GAIN       to_frac16(-7.0)
@@ -301,6 +305,5 @@ extern strNR    NR;
 #include "SIM.h"
 
 extern  strSIM  SIM;
-extern  strWOLA WOLASim;
 
 #endif  // _COMMON_H

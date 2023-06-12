@@ -20,9 +20,6 @@ using namespace std;
 //      Some modules may always have output, like WOLA
 
 strSIM  SIM;            // Declared as global because both top level and SIM modules use it
-strWOLA WOLASim;        // Declared as global because both SIM and SYS modules use it
-//frac24_t WolaAnaWin[WOLA_LA];
-//frac24_t WolaSynWin[WOLA_LS];
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
