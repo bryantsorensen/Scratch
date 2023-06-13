@@ -252,7 +252,7 @@ int24_t TC;
 #define     WOLA_R                  BLOCK_SIZE
 #define     WOLA_STACKING_EVEN      0
 #define     WOLA_STACKING_ODD       1
-#define     WOLA_STACKING           WOLA_STACKING_EVEN
+#define     WOLA_STACKING           WOLA_STACKING_ODD
 #define     WOLA_FILTBANK_GAIN_LOG2 to_frac16(-0.4432)
 
 #define     WOLA_WINDOW_DEFAULT     0

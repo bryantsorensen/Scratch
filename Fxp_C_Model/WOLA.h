@@ -21,6 +21,7 @@ struct strWOLA
 {
     frac24_t    AnaBuf[WOLA_LA];
     frac24_t    AnaWinBuf[WOLA_LA];
+    Complex24   BitRevBuf[WOLA_N];
     Complex24   FFTBuf[WOLA_N];
     frac24_t    SynWinBuf[WOLA_LS];
     frac24_t    SynOlaBuf[WOLA_LS];     // Overlap-add buffer
@@ -29,6 +30,8 @@ struct strWOLA
     int8_t      Stacking;
     uint8_t     AnaBlockCnt;
     uint8_t     SynBlockCnt;
+    frac24_t    AnaSign;
+    frac24_t    SynSign;
 
     strWOLA()
     {
@@ -41,7 +44,10 @@ struct strWOLA
         }
 
         for (i = 0; i < WOLA_N; i++)
+        {
             FFTBuf[i].SetVal(to_frac24(0.0), to_frac24(0.0));
+            BitRevBuf[i].SetVal(to_frac24(0.0), to_frac24(0.0));
+        }
 
         for (i = 0; i < WOLA_LS; i++)
         {
@@ -52,6 +58,8 @@ struct strWOLA
         Stacking = -1;      // Init with illegal value
         AnaBlockCnt = 0;
         SynBlockCnt = 0;
+        AnaSign = 1.0;
+        SynSign = -1.0;
     };
     ~strWOLA() {};
 };

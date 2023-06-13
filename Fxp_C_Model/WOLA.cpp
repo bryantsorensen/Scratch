@@ -172,18 +172,21 @@ int j;
 int TimeBlocks = (WOLA_N/WOLA_LA);      // Required this be integer ratio
 uint16_t bra;    // Bit reversed address
 int16_t CircShift;
+const double ShFreqArg = M_PI/(double)WOLA_N;     // 2*pi*n*0.5/N; n is accounted for below, 2 and 0.5 cancel out
+frac24_t Rsh, Ish;
 
     // Simulate movement of the buffer; don't worry about being efficient, this is simulation of what happens in HEAR
     // Sample 0 --> 8
     // Sample 8 --> 16 etc.
     // new samples: 0-7
 
-// TODO: Add sign sequencing for odd stacking
-
     for (i = WOLA_R; i < WOLA_LA; i++)
         sWOLA->AnaBuf[i-WOLA_R] = sWOLA->AnaBuf[i];     // Shift samples down in buffer
     for (i = 0; i < WOLA_R; i++)
-        sWOLA->AnaBuf[WOLA_LA-WOLA_R+i] = AnaIn[i];
+        sWOLA->AnaBuf[WOLA_LA-WOLA_R+i] = AnaIn[i]*sWOLA->AnaSign;      // Sign sequencing
+
+    if (WOLA_STACKING == WOLA_STACKING_ODD)
+        sWOLA->AnaSign = sWOLA->AnaSign * -1.0;     // Flip sign every OS blocks
 
     // Do windowing
     for (i = 0; i < WOLA_LA; i++)
@@ -196,20 +199,31 @@ int16_t CircShift;
             sWOLA->AnaWinBuf[i] += sWOLA->AnaWinBuf[j*WOLA_N+i];
     }
 
-    // Circular shift by WOLA_R samples (again, emulated w/o efficiency)
-    // Also do bit reversal addressing at the same time
+    // Circular shift by increasing multiples of WOLA_R samples (again, emulated w/o efficiency)
     CircShift = (sWOLA->AnaBlockCnt*WOLA_R)&(WOLA_N-1);
     for (i = 0; i < WOLA_N; i++)
     {
-        bra = BitRevTable[i] >> BITREV_SHIFT;
-        if (WOLA_STACKING == WOLA_STACKING_EVEN)
-            sWOLA->FFTBuf[bra].SetVal(sWOLA->AnaWinBuf[(i-CircShift)&(WOLA_N-1)], to_frac24(0.0));
-        else
-        {
-// TODO: Add frequency shift for odd stacking
-        }
+        sWOLA->BitRevBuf[i].SetVal(sWOLA->AnaWinBuf[(i-CircShift)&(WOLA_N-1)], to_frac24(0.0));
     }
     sWOLA->AnaBlockCnt++;
+
+    // Do frequency shift to odd frequencies for odd stacking
+    if (WOLA_STACKING == WOLA_STACKING_ODD)
+    {
+        for (i = 0; i < WOLA_N; i++)
+        {
+            Rsh = sWOLA->BitRevBuf[i].Real()*cos(ShFreqArg*(double)i);
+            Ish = sWOLA->BitRevBuf[i].Real()*(-sin(ShFreqArg*(double)i));
+            sWOLA->BitRevBuf[i].SetVal(Rsh, Ish);
+        }
+    }
+
+    // Do bit reversal
+    for (i = 0; i < WOLA_N; i++)
+    {
+        bra = BitRevTable[i] >> BITREV_SHIFT;
+        sWOLA->FFTBuf[bra] = sWOLA->BitRevBuf[i];
+    }
 
     // Take forward FFT
     R2FFTdit(sWOLA->FFTBuf, WOLA_LOG2_N, false);
@@ -217,7 +231,8 @@ int16_t CircShift;
     // Copy only the 1st half of (what should be) symmetric output
     for (i = 0; i < WOLA_NUM_BINS; i++)
         AnaOut[i] = sWOLA->FFTBuf[i];
-    AnaOut[0].SetImag(sWOLA->FFTBuf[WOLA_NUM_BINS].Real());     // Copy Nyquist to imag part of [0]
+    if (WOLA_STACKING == WOLA_STACKING_EVEN)
+        AnaOut[0].SetImag(sWOLA->FFTBuf[WOLA_NUM_BINS].Real());     // Copy Nyquist to imag part of [0]
 }
 
 
@@ -228,35 +243,52 @@ uint16_t bra;
 uint16_t j;
 int TimeBlocks = (WOLA_N/WOLA_LS);      // Required this be integer ratio
 int16_t CircShift;
+const double ShFreqArg = M_PI/(double)WOLA_N;     // 2*pi*n*0.5/N; n is accounted for below, 2 and 0.5 cancel out
+frac24_t Rsh;
 
-    // Copy input data to work buffer
+    // Copy input data to work buffer, with complex conjugate symmetry
+    if (WOLA_STACKING == WOLA_STACKING_EVEN)
+    {    
     // Separate DC and Nyquist from bin[0] of input to their respective bins
-    sWOLA->FFTBuf[0].SetVal(SynIn[0].Real(), 0.0);
-    sWOLA->FFTBuf[WOLA_NUM_BINS].SetVal(SynIn[0].Imag(), 0.0);
-    for (i = 1; i < WOLA_NUM_BINS; i++)
-        sWOLA->FFTBuf[i] = SynIn[i];
-    for (i = (WOLA_NUM_BINS+1); i < WOLA_N; i++)     // Complete the complex conjugate symmetry
-        sWOLA->FFTBuf[i] = conj(sWOLA->FFTBuf[WOLA_N-i]);
+        sWOLA->FFTBuf[0].SetVal(SynIn[0].Real(), 0.0);
+        sWOLA->FFTBuf[WOLA_NUM_BINS].SetVal(SynIn[0].Imag(), 0.0);
+        for (i = 1; i < WOLA_NUM_BINS; i++)
+            sWOLA->FFTBuf[i] = SynIn[i];
+        for (i = (WOLA_NUM_BINS+1); i < WOLA_N; i++)     // Complete the complex conjugate symmetry
+            sWOLA->FFTBuf[i] = conj(sWOLA->FFTBuf[WOLA_N-i]);
+    }
+    else    // odd stacking
+    {
+        for (i = 0; i < WOLA_NUM_BINS; i++)
+            sWOLA->FFTBuf[i] = SynIn[i];
+        for (; i < WOLA_N; i++)     // Complete the complex conjugate symmetry
+            sWOLA->FFTBuf[i] = conj(sWOLA->FFTBuf[WOLA_N-1-i]);
+    }
 
     R2FFTdif(sWOLA->FFTBuf, WOLA_LOG2_N, true);     // Take inverse FFT
 
-// TODO: Add frequency shift for odd stacking
-
-    // Apply bit reverse; also clear out imag part (which should already be 0)
-    // For space - store temporarily into imag part
+    // Apply bit reverse
     for (i = 0; i < WOLA_N; i++)
     {
         bra = BitRevTable[i] >> BITREV_SHIFT;
-        sWOLA->FFTBuf[bra].SetImag(sWOLA->FFTBuf[i].Real());
+        sWOLA->BitRevBuf[bra] = sWOLA->FFTBuf[i];
+    }
+
+    // Undo frequency shift for odd stacking
+    if (WOLA_STACKING == WOLA_STACKING_ODD)
+    {
+        for (i = 0; i < WOLA_N; i++)
+        {
+        // Should only have to calculate real part; imag part should go to 0
+            Rsh = sWOLA->BitRevBuf[i].Real()*cos(ShFreqArg*(double)i) - sWOLA->BitRevBuf[i].Imag()*sin(ShFreqArg*(double)i);
+            sWOLA->BitRevBuf[i].SetVal(Rsh, 0.0);
+        }
     }
 
     // Do circular shift
     CircShift = (sWOLA->SynBlockCnt*WOLA_R)&(WOLA_N-1);
     for (i = 0; i < WOLA_N; i++)
-    {
-        if (WOLA_STACKING == WOLA_STACKING_EVEN)
-            sWOLA->SynWinBuf[i] = sWOLA->FFTBuf[(i+CircShift)&(WOLA_N-1)].Imag();   // Grab out of imag part (temp storage)
-    }
+        sWOLA->SynWinBuf[i] = sWOLA->BitRevBuf[(i+CircShift)&(WOLA_N-1)].Real();
     sWOLA->SynBlockCnt++;
 
     // Replicate the block
@@ -280,13 +312,9 @@ int16_t CircShift;
         sWOLA->SynOlaBuf[i] += sWOLA->SynWinBuf[i];
 
     // Capture the oldest samples out of the OLA buffer, for output
-    if (WOLA_STACKING == WOLA_STACKING_EVEN)
-    {
-        for (i = 0; i < WOLA_R; i++)
-            SynOut[i] = sWOLA->SynOlaBuf[i];
-    }
-// TODO: Add sign sequencer for odd stacking
-    else
-    {
-    }
+    for (i = 0; i < WOLA_R; i++)
+        SynOut[i] = sWOLA->SynOlaBuf[i]*sWOLA->SynSign;     // Include sign sequencing
+
+    if (WOLA_STACKING == WOLA_STACKING_ODD)
+        sWOLA->SynSign = sWOLA->SynSign * -1.0;     // Flip sign every OS blocks
 }
