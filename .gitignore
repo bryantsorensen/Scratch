@@ -2,6 +2,7 @@ Fxp_C_Model/x64/*
 Fxp_C_Model/.vs/*
 Fxp_C_Model/Debug/*
 Fxp_C_Model/Release/*
+Fxp_C_Model/Outputs/*
 *.map
 Scripts/.idea/*
 Scripts/__pycache__/*
@@ -11,3 +12,4 @@ Fxp_C_Model/*.wav
 Fxp_C_Model/FW_Param_Init.cpp
 
 Shared/include/*_ParamStruct.h
+

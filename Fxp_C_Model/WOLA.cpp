@@ -169,7 +169,7 @@ void WOLA_Analyze(strWOLA* sWOLA, frac24_t* AnaIn, Complex24* AnaOut)
 {
 int i;
 int j;
-int TimeBlocks = (WOLA_N/WOLA_LA);      // Required this be integer ratio
+int TimeBlocks = (WOLA_LA/WOLA_N);      // Required this be integer ratio
 uint16_t bra;    // Bit reversed address
 int16_t CircShift;
 const double ShFreqArg = M_PI/(double)WOLA_N;     // 2*pi*n*0.5/N; n is accounted for below, 2 and 0.5 cancel out
@@ -186,7 +186,10 @@ frac24_t Rsh, Ish;
         sWOLA->AnaBuf[WOLA_LA-WOLA_R+i] = AnaIn[i]*sWOLA->AnaSign;      // Sign sequencing
 
     if (WOLA_STACKING == WOLA_STACKING_ODD)
-        sWOLA->AnaSign = sWOLA->AnaSign * -1.0;     // Flip sign every OS blocks
+    {
+        if ((sWOLA->AnaBlockCnt & (WOLA_OS-1)) == 0)
+            sWOLA->AnaSign = sWOLA->AnaSign * -1.0;     // Flip sign every OS blocks
+    }
 
     // Do windowing
     for (i = 0; i < WOLA_LA; i++)
@@ -241,7 +244,7 @@ void WOLA_Synthesize(strWOLA* sWOLA, Complex24* SynIn, frac24_t* SynOut)
 int16_t i;
 uint16_t bra;
 uint16_t j;
-int TimeBlocks = (WOLA_N/WOLA_LS);      // Required this be integer ratio
+int TimeBlocks = (WOLA_LS/WOLA_N);      // Required this be integer ratio
 int16_t CircShift;
 const double ShFreqArg = M_PI/(double)WOLA_N;     // 2*pi*n*0.5/N; n is accounted for below, 2 and 0.5 cancel out
 frac24_t Rsh;
@@ -289,7 +292,6 @@ frac24_t Rsh;
     CircShift = (sWOLA->SynBlockCnt*WOLA_R)&(WOLA_N-1);
     for (i = 0; i < WOLA_N; i++)
         sWOLA->SynWinBuf[i] = sWOLA->BitRevBuf[(i+CircShift)&(WOLA_N-1)].Real();
-    sWOLA->SynBlockCnt++;
 
     // Replicate the block
     for (i = 0; i < WOLA_N; i++)
@@ -316,5 +318,11 @@ frac24_t Rsh;
         SynOut[i] = sWOLA->SynOlaBuf[i]*sWOLA->SynSign;     // Include sign sequencing
 
     if (WOLA_STACKING == WOLA_STACKING_ODD)
-        sWOLA->SynSign = sWOLA->SynSign * -1.0;     // Flip sign every OS blocks
+    {
+        if ((sWOLA->SynBlockCnt & (WOLA_OS-1)) == (WOLA_OS-1))
+            sWOLA->SynSign = sWOLA->SynSign * -1.0;     // Flip sign every OS blocks
+    }
+
+    sWOLA->SynBlockCnt++;
+
 }

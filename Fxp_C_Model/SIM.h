@@ -39,8 +39,9 @@ enum enSysFiles
     SysError = 0,
     SysFwdGainL2,
     SysAgcoGainL2,
+    SysFwdAnaBuf,
+    SysFwdSynOut,
     NUM_SYS_FILES
-
 };
 
 enum enWdrcFiles
@@ -48,7 +49,6 @@ enum enWdrcFiles
     WdrcLevelL2 = 0,
     WdrcBinGainL2,
     NUM_WDRC_FILES
-
 };
 
 enum enFbcFiles

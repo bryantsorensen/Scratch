@@ -199,9 +199,11 @@ unsigned fidx;
 char fname[256];
 
 // Open SYS files (always)
-    sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_Error.csv");       fopen_s(&SIM.SysFiles[SysError], fname, "w");     // if returns NULL, let error occur when trying to write to the file
-    sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_FwdGainLog2.csv"); fopen_s(&SIM.SysFiles[SysFwdGainL2], fname, "w");
-    sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_AgcoGainLog2");    fopen_s(&SIM.SysFiles[SysAgcoGainL2], fname, "w");
+    sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_Error.csv");         fopen_s(&SIM.SysFiles[SysError], fname, "w");     // if returns NULL, let error occur when trying to write to the file
+    sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_FwdGainLog2.csv");   fopen_s(&SIM.SysFiles[SysFwdGainL2], fname, "w");
+    sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_AgcoGainLog2.csv");  fopen_s(&SIM.SysFiles[SysAgcoGainL2], fname, "w");
+    sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_FwdAnaBuf.csv");     fopen_s(&SIM.SysFiles[SysFwdAnaBuf], fname, "w");
+    sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_FwdSynOut.csv");     fopen_s(&SIM.SysFiles[SysFwdSynOut], fname, "w");
 
 // Open WDRC files
     if (WDRC_Params.Profile.Enable)
@@ -310,8 +312,20 @@ unsigned i = 0;     // init to 0 for NumVals = 1 case
     if (fp != NULL)
     {
         for (; i < (NumVals-1); i++)
-            fprintf(fp, "%2.12e+%2.12ej, ", Cval[i].Real(), Cval[i].Imag());
-        fprintf(fp, "%2.12e+%2.12ej\n", Cval[i].Real(), Cval[i].Imag());
+            fprintf(fp, "%2.12e%+2.12ej, ", Cval[i].Real(), Cval[i].Imag());
+        fprintf(fp, "%2.12e%+2.12ej\n", Cval[i].Real(), Cval[i].Imag());
+    }
+}
+
+void SIM_Write24 (FILE* fp, frac24_t* Cval, unsigned NumVals)
+{
+unsigned i = 0;     // init to 0 for NumVals = 1 case
+
+    if (fp != NULL)
+    {
+        for (; i < (NumVals-1); i++)
+            fprintf(fp, "%2.12e, ", Cval[i]);
+        fprintf(fp, "%2.12e\n", Cval[i]);
     }
 }
 
@@ -346,6 +360,8 @@ void SIM_LogFiles()
     SIM_WriteComplex24 (SIM.SysFiles[SysError], SYS.Error, WOLA_NUM_BINS);
     SIM_Write16 (SIM.SysFiles[SysFwdGainL2], SYS.FwdGainLog2, WOLA_NUM_BINS);
     SIM_Write16 (SIM.SysFiles[SysAgcoGainL2], &SYS.AgcoGainLog2, 1);
+    SIM_WriteComplex24 (SIM.SysFiles[SysFwdAnaBuf], SYS.FwdAnaBuf, WOLA_NUM_BINS);
+    SIM_Write24 (SIM.SysFiles[SysFwdSynOut], SYS.FwdSynOut, BLOCK_SIZE);
 
     SIM_Write16 (SIM.WdrcFiles[WdrcLevelL2], WDRC.LevelLog2, WDRC_NUM_CHANNELS);
     SIM_Write16 (SIM.WdrcFiles[WdrcBinGainL2], WDRC.BinGainLog2, WOLA_NUM_BINS);

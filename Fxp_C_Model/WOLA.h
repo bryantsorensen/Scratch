@@ -58,8 +58,11 @@ struct strWOLA
         Stacking = -1;      // Init with illegal value
         AnaBlockCnt = 0;
         SynBlockCnt = 0;
-        AnaSign = 1.0;
-        SynSign = -1.0;
+        if ((WOLA_N < WOLA_LA) && (WOLA_STACKING == WOLA_STACKING_ODD))
+            AnaSign = -1.0;
+        else
+            AnaSign = 1.0;
+        SynSign = 1.0;
     };
     ~strWOLA() {};
 };
