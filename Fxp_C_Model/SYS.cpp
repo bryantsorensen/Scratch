@@ -63,6 +63,8 @@ int24_t tap;
         for (i = 0; i < WOLA_NUM_BINS; i++)
             EQ_Params.Profile.BinGain[i] = to_frac16(0);
     }
+
+    SYS.MaxVal = 0.0;
 }
 
 
@@ -90,9 +92,11 @@ frac24_t Ar, Ai;
 
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
-        Ar = to_frac24(SYS.FwdAnaBuf[i].Real());    Ai = to_frac24(SYS.FwdAnaBuf[i].Imag());
+        Ar = SYS.FwdAnaBuf[i].Real();       Ai = SYS.FwdAnaBuf[i].Imag();
+        Ar *= WOLA_ANA_POSTSCALE;           Ai *= WOLA_ANA_POSTSCALE;      // Emulate block floating point
+        SYS.FwdAnaBuf[i].SetVal(Ar, Ai);
         SYS.MicEnergy[i] = sat48(Ar*Ar + Ai*Ai);
-    }   
+    }
     
 }
 
@@ -121,6 +125,8 @@ frac24_t Ar, Ai;
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
         Ar = SYS.RevAnaBuf[0][i].Real();    Ai = SYS.RevAnaBuf[0][i].Imag();
+        Ar *= WOLA_ANA_POSTSCALE;           Ai *= WOLA_ANA_POSTSCALE;      // Emulate block floating point
+        SYS.RevAnaBuf[0][i].SetVal(Ar, Ai);
         SYS.RevEnergy[i] = sat48(Ar*Ar + Ai*Ai);
     }   
     
@@ -138,6 +144,7 @@ frac24_t Er, Ei;
         else
             SYS.Error[i] = SYS.FwdAnaBuf[i];
         Er = SYS.Error[i].Real();   Ei = SYS.Error[i].Imag();
+
         SYS.BinEnergy[i] = sat48(Er*Er + Ei*Ei);
         SYS.BinEnergyLog2[i] = log2(SYS.BinEnergy[i]);
     }
@@ -152,22 +159,28 @@ int24_t i;
 
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
-    // TODO: Add in NR gain
-        BinGainLog2 = WDRC.BinGainLog2[i]; // + NR.BinGainLog2[i];
+        BinGainLog2 = WDRC.BinGainLog2[i] + NR.BinGainLog2[i];
         SYS.DynamicGainLog2[i] = BinGainLog2;    // for use in FBC mu mod by gain
         BinGainLog2 += EQ_Params.Profile.BinGain[i] + WOLA_FILTBANK_GAIN_LOG2;
         BinGainLog2 = min16(BinGainLog2, FBC.GainLimLog2[i]);
         SYS.LimitedFwdGain[i] = BinGainLog2;        // For debugging
-BinGainLog2 = to_frac16(0); // TEST WOLA
         SYS.FwdSynBuf[i].SetReal(rnd_sat24(mult_log2(SYS.Error[i].Real(), BinGainLog2)));
         SYS.FwdSynBuf[i].SetImag(rnd_sat24(mult_log2(SYS.Error[i].Imag(), BinGainLog2)));
     }
-
 }
 
 
 void SYS_HEAR_WolaFwdSynthesis()
 {
+uint16_t i;
+frac24_t Ar, Ai;
+
+    for (i = 0; i < WOLA_NUM_BINS; i++)
+    {
+        Ar = SYS.FwdSynBuf[i].Real();   Ai = SYS.FwdSynBuf[i].Imag();
+        Ar *= WOLA_SYN_PRESCALE;        Ai *= WOLA_SYN_PRESCALE;        // Restore block floating point
+        SYS.FwdSynBuf[i].SetVal(Ar, Ai);
+    }
     WOLA_Synthesize(&SYS.FwdWOLA, SYS.FwdSynBuf, SYS.FwdSynOut);
 }
 

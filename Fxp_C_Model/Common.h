@@ -212,6 +212,19 @@ frac16_t ret;
     return ret;
 }
 
+inline frac24_t max24 (frac24_t a, frac24_t b)
+{
+frac24_t ret;
+    ret = (a > b) ? a : b;
+    return ret;
+}
+
+inline frac24_t min24 (frac24_t a, frac24_t b)
+{
+frac24_t ret;
+    ret = (a < b) ? a : b;
+    return ret;
+}
 
 
 inline frac48_t dualTC_Smooth_48 (frac48_t Inp, frac48_t Prev, int24_t ATC, int24_t RTC)
@@ -235,6 +248,7 @@ int24_t TC;
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Definitions common across modules
+
 #define     BLOCK_SIZE              8
 #define     BASEBAND_SAMPLE_RATE    24000
 #define     SUBBAND_SAMPLE_RATE     (BASEBAND_SAMPLE_RATE/BLOCK_SIZE)
@@ -250,11 +264,17 @@ int24_t TC;
 #define     WOLA_N                  (1<<WOLA_LOG2_N)
 #define     WOLA_NUM_BINS           (WOLA_N/2)
 #define     WOLA_R                  BLOCK_SIZE
+#define     WOLA_OS                 (WOLA_N/WOLA_R)
+
 #define     WOLA_STACKING_EVEN      0
 #define     WOLA_STACKING_ODD       1
 #define     WOLA_STACKING           WOLA_STACKING_EVEN
-#define     WOLA_OS                 (WOLA_N/WOLA_R)
-#define     WOLA_FILTBANK_GAIN_LOG2 to_frac16(-0.4432)
+
+#define     WOLA_FILTBANK_GAIN_LOG2 to_frac16(-2.0)     // For LA=LS=N=64, default window; 0.252825850907156 linear
+
+#define     WOLA_BFP_SHIFT          4                                   // TODO: Determine if this is sufficient or if we need to go to 5
+#define     WOLA_SYN_PRESCALE       (double)(1 << WOLA_BFP_SHIFT)
+#define     WOLA_ANA_POSTSCALE      (1.0/WOLA_SYN_PRESCALE)             // TODO: Convert to right shift for fixed point
 
 #define     WOLA_WINDOW_DEFAULT     0
 #define     WOLA_WINDOW_HANNING     1

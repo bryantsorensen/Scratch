@@ -51,6 +51,8 @@ struct strSYS
 
     strWOLA     FwdWOLA;
     strWOLA     RevWOLA;
+
+    double      MaxVal;     // TODO: Remove this after testing
 };
 
 

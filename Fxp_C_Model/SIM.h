@@ -75,7 +75,7 @@ enum enNrFiles
 struct strSIM
 {
     char*       InfileName;         // Input .wav file name including path
-    char*       OutFileName;        // Output .wav file name including path
+    char        OutFileName[256];   // Output .wav file name including path; reserve the space here
     char*       ResultPath;         // Result path where to write simulation results
     char*       FBSimFile;          // Input file including path with feedback sim values (start time in seconds, FIR1 coeffs, FIR2 coeffs)
 

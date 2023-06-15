@@ -83,21 +83,13 @@ const char *oli;                        /* option letter list index */
 } // getopt
 
 
-// Change to oiginal code: Helper function to keep optarg a local static, return its value
-char* get_optarg()
-{
-    return optarg;
-}
-
-
 int8_t parse_command_line(int argc, char * const argv[])
 {
-char ValidOptions[] = "s:d:r:f:h";     // List of valid option switches.  The ':' after a character means it has must have an argument after it
+char ValidOptions[] = "s:r:f:h";     // List of valid option switches.  The ':' after a character means it has must have an argument after it
 int option;
 int8_t ExitVal = 0;
 
     SIM.InfileName = NULL;
-    SIM.OutFileName = NULL;
     SIM.ResultPath = NULL;
     SIM.FBSimFile = NULL;
 
@@ -110,23 +102,20 @@ int8_t ExitVal = 0;
             case 'h':
                 printf ("Command line options for %s:", argv[0]);
                 printf ("-s <source file name and path>         REQUIRED\n");
-                printf ("-d <destination file name and path>    REQUIRED\n");
                 printf ("-r <results output directory>          REQUIRED\n");
+                printf ("-f <Feedback sim file name and path>   FOR USE WITH FBC SIM\n");
                 printf ("-h                                     THIS HELP MENU\n");
                 printf ("\nNow exiting...\n\n");
                 ExitVal = 1;
                 break;
             case 's':
-                SIM.InfileName = get_optarg();      // Point to input file name string
-                break;
-            case 'd':
-                SIM.OutFileName = get_optarg();
+                SIM.InfileName = optarg;      // Point to input file name string
                 break;
             case 'r':
-                SIM.ResultPath = get_optarg();
+                SIM.ResultPath = optarg;
                 break;
             case 'f':
-                SIM.FBSimFile = get_optarg();
+                SIM.FBSimFile = optarg;
             case '?':
                 printf ("\nErroneous Command Line Argument; use -h for help. Now exiting...\n\n");
                 ExitVal = 2;
@@ -199,6 +188,9 @@ unsigned fidx;
 char fname[256];
 
 // Open SYS files (always)
+    
+    sprintf_s(SIM.OutFileName, "%s/%s", SIM.ResultPath, "Fixp_Out.wav");    // Create name of output .wav file; opened later
+
     sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_Error.csv");         fopen_s(&SIM.SysFiles[SysError], fname, "w");     // if returns NULL, let error occur when trying to write to the file
     sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_FwdGainLog2.csv");   fopen_s(&SIM.SysFiles[SysFwdGainL2], fname, "w");
     sprintf_s(fname, "%s/%s", SIM.ResultPath, "SYS_AgcoGainLog2.csv");  fopen_s(&SIM.SysFiles[SysAgcoGainL2], fname, "w");
