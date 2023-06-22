@@ -167,16 +167,23 @@ inline frac16_t log2_approx(accum_t a)
 {
 frac16_t ret;
 
-    ret = log2(a);
+    if (a == 0.0)
+        ret = -47;
+    else
+        ret = to_frac16(log2(a));
     return ret;
 }
 
 
-inline int24_t log2abs (accum_t a)
+// Model of log2abs instruction; add 1 to floor calculation to match
+inline int24_t log2_int24 (accum_t a)
 {
 int24_t ret;
 
-    ret = (int24_t)log2(a);
+    if (a <= 0.0)
+        ret = -47;
+    else
+        ret = (int24_t)floor(log2(a)) + 1;
     return ret;
 }
 
@@ -287,7 +294,9 @@ int24_t TC;
 
 #define     FBC_COEFFS_PER_BIN      4
 #define     FBC_COEFF_SPACING       2       // Should be either 1 (continguous coeffs) or 2 (zero between each coeff)
-#define     NUM_FBC_ANA_TAPS        (FBC_COEFFS_PER_BIN*FBC_COEFF_SPACING)
+#define     FBC_REV_ANA_BUF_SIZE    8       // MUST BE POWER OF 2 >= (FBC_COEFFS_PER_BIN*FBC_COEFF_SPACING)
+#define     FBC_REV_ANA_SIZE_MASK   (FBC_REV_ANA_BUF_SIZE-1)
+
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Include module parameter structure headers

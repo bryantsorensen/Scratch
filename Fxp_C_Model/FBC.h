@@ -15,14 +15,20 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Defines
 
-#define     FBC_START_BIN           5       // Bin at which adaptation starts (no adaptation below this)
-#define     FBC_END_BIN             (WOLA_NUM_BINS-1)
-#define     FBC_BINS_PER_CALL       9
+#define     FBC_START_BIN               5       // Bin at which adaptation starts (no adaptation below this)
+#define     FBC_END_BIN                 (WOLA_NUM_BINS-1)
+#define     FBC_BINS_PER_CALL           9
 
-#define     MAX_GAIN_MU_ADJ         4       // Max amount that gain difference can adjust Mu shift
-#define     FBC_LEVEL_ATK_SHIFT     0
-#define     FBC_LEVEL_REL_SHIFT     8
-     
+#define     MAX_GAIN_MU_ADJ             4       // Max amount that gain difference can adjust Mu shift
+#define     FBC_LEVEL_ATK_SHIFT         0
+#define     FBC_LEVEL_REL_SHIFT         8
+
+#define     FBC_FILT_SHIFT              2       // Shift to give some headroom in FBC filter
+#define     FBC_FILT_SHIFT_GAIN_LOG2    to_frac16((double)FBC_FILT_SHIFT)
+
+#define     FBC_MU_NORM_BIAS            -22     // Power of two limit on normalization Mu
+
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Module structure
 
@@ -45,6 +51,7 @@ struct strFBC
     frac48_t    BESmoothed[WOLA_NUM_BINS];
 
     Complex24   Sinusoid[2];        // Cos(x) + jSin(x)
+    int24_t     FreqShiftEnable;
 
 };
 

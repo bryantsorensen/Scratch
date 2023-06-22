@@ -99,7 +99,7 @@
 		"0": {
 			"LeakFast": 8,
 			"LeakSlow": 15,
-			"BulkDelay": 10.0,
+			"BulkDelay": 0.625,
 			"MuOffset[0]": 15,
 			"MuOffset[1]": 15,
 			"MuOffset[2]": 15,

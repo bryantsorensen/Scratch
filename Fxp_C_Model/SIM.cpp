@@ -116,6 +116,7 @@ int8_t ExitVal = 0;
                 break;
             case 'f':
                 SIM.FBSimFile = optarg;
+                break;
             case '?':
                 printf ("\nErroneous Command Line Argument; use -h for help. Now exiting...\n\n");
                 ExitVal = 2;
@@ -212,9 +213,12 @@ char fname[256];
 // Open FBC files
     if (FBC_Params.Profile.Enable)
     {
-        sprintf_s(fname, "%s/%s", SIM.ResultPath, "FBC_Coeffs.csv");      fopen_s(&SIM.FbcFiles[FbcCoeffs], fname, "w");
-        sprintf_s(fname, "%s/%s", SIM.ResultPath, "FBC_AdaptShift.csv");  fopen_s(&SIM.FbcFiles[FbcAdaptShift], fname, "w");
-        sprintf_s(fname, "%s/%s", SIM.ResultPath, "FBC_Sinusoid.csv");    fopen_s(&SIM.FbcFiles[FbcSinusoid], fname, "w");
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "FBC_Coeffs.csv");        fopen_s(&SIM.FbcFiles[FbcCoeffs], fname, "w");
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "FBC_CoefMag.csv");       fopen_s(&SIM.FbcFiles[FbcCoefMag], fname, "w");
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "FBC_AdaptShift.csv");    fopen_s(&SIM.FbcFiles[FbcAdaptShift], fname, "w");
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "FBC_Sinusoid.csv");      fopen_s(&SIM.FbcFiles[FbcSinusoid], fname, "w");
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "FBC_ESmoothed.csv");     fopen_s(&SIM.FbcFiles[FbcESmooth], fname, "w");
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "FBC_BESmoothed.csv");    fopen_s(&SIM.FbcFiles[FbcBeSmooth], fname, "w");        
     }
     else
     {
@@ -255,7 +259,7 @@ unsigned sample;
 unsigned tap;
 unsigned k;     // output buffer delay line index
 double F1, F2;      // Use doubles for simulation
-double S1, S2;
+double S1;
 double FBSig;
 double CombinedSig;
 
@@ -266,8 +270,8 @@ double CombinedSig;
         SIM.OutBufDelay[SIM.CurOpIdx] = outBuf[sample];    // overwrite oldest with new sample
         for (tap = 0, k = SIM.CurOpIdx; tap < FB_SIM_TAPS; tap++)
         {
-            F1 += (double)(SIM.FB_FIR1[tap])*SIM.OutBufDelay[k];
-            F2 += (double)(SIM.FB_FIR2[tap])*SIM.OutBufDelay[k];
+            F1 += SIM.FB_FIR1[tap]*(double)SIM.OutBufDelay[k];
+            F2 += SIM.FB_FIR2[tap]*(double)SIM.OutBufDelay[k];
             k = (k - 1) & FB_SIM_TAPS_MASK;     // go back in time in out buffer delay line
         }
         SIM.CurOpIdx = (SIM.CurOpIdx+1) & FB_SIM_TAPS_MASK;   // move to next sample in buffer, forward in time
@@ -275,21 +279,20 @@ double CombinedSig;
         // Create the mixing factors
         if (SIM.CurSample < SIM.TransitionStart)
             S1 = 1.0;
-        if ((SIM.CurSample >= SIM.TransitionStart) && (SIM.CurSample < SIM.TransitionEnd))
+        else if ((SIM.CurSample >= SIM.TransitionStart) && (SIM.CurSample < SIM.TransitionEnd))
         {
             S1 = 1.0 - ((double)(SIM.CurSample - SIM.TransitionStart)/FB_SIM_TRNSTION_SMPLS_DBL);
             S1 = (S1 < 0.0) ? 0.0 : S1;       // Catch edge case, keep scale positive
         }
         else    // After TransitionEnd
             S1 = 0.0;
-        S2 = 1.0 - S1;
 
-        // Combine F1 and F2 into feedback signal using scale factors; saturate; add back into input buffer
-        FBSig = F1*S1 + F2*S2;
+        // Combine F1 and F2 into feedback signal using scale factor; saturate; add back into input buffer
+
+        FBSig = (F1-F2)*S1 + F2;        // F1 when S1 = 1, F2 when S1 = 0
+
         CombinedSig = (double)(inBuf[sample]) + FBSig;
-        CombinedSig = (CombinedSig >= 1.0) ? (1.0-1.0e-23) : CombinedSig;
-        CombinedSig = (CombinedSig < -1.0) ? -1.0 : CombinedSig;
-        inBuf[sample] = to_frac24(CombinedSig);
+        inBuf[sample] = rnd_sat24(CombinedSig);
 
         SIM.CurSample++;        // Update simulation sample count
     }
@@ -308,6 +311,20 @@ unsigned i = 0;     // init to 0 for NumVals = 1 case
         fprintf(fp, "%2.12e%+2.12ej\n", Cval[i].Real(), Cval[i].Imag());
     }
 }
+
+
+void SIM_Write48 (FILE* fp, frac48_t* Cval, unsigned NumVals)
+{
+unsigned i = 0;     // init to 0 for NumVals = 1 case
+
+    if (fp != NULL)
+    {
+        for (; i < (NumVals-1); i++)
+            fprintf(fp, "%2.12e, ", Cval[i]);
+        fprintf(fp, "%2.12e\n", Cval[i]);
+    }
+}
+
 
 void SIM_Write24 (FILE* fp, frac24_t* Cval, unsigned NumVals)
 {
@@ -359,7 +376,10 @@ void SIM_LogFiles()
     SIM_Write16 (SIM.WdrcFiles[WdrcBinGainL2], WDRC.BinGainLog2, WOLA_NUM_BINS);
 
     SIM_WriteComplex24 (SIM.FbcFiles[FbcCoeffs], &FBC.Coeffs[0][0], (WOLA_NUM_BINS*FBC_COEFFS_PER_BIN));
+    SIM_Write16 (SIM.FbcFiles[FbcCoefMag], FBC.CoefMag, WOLA_NUM_BINS); 
     SIM_WriteInt (SIM.FbcFiles[FbcAdaptShift], FBC.AdaptShift, WOLA_NUM_BINS);
+    SIM_Write48 (SIM.FbcFiles[FbcESmooth], FBC.ESmoothed, WOLA_NUM_BINS);
+    SIM_Write48 (SIM.FbcFiles[FbcBeSmooth], FBC.BESmoothed, WOLA_NUM_BINS);
     SIM_WriteComplex24 (SIM.FbcFiles[FbcSinusoid], FBC.Sinusoid, 1);
 
     SIM_Write16 (SIM.NrFiles[NrNoiseEst], NR.NoiseEst, WOLA_NUM_BINS);

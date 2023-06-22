@@ -64,7 +64,7 @@ int8_t RetVal = 0;
 // Initialize all modules
     SYS_Init();
     WDRC_Init();
-    FBC_Init();     // NOTE: FBC_Init MUST be called after WDRC_Init in order to capture correct target gains
+    FBC_Init();     // NOTE: FBC_Init MUST be called after WDRC_Init to capture correct target gains
     NR_Init();
 
 //++++++++++++++++++++
@@ -116,17 +116,19 @@ int k;
 
         SYS_FENG_ApplyInputGain();
         SYS_HEAR_WolaFwdAnalysis();
+        SYS_HEAR_WolaRevAnalysis();
 
         NR_Main();
 
         FBC_HEAR_Levels();
         FBC_HEAR_DoFiltering();
-        FBC_FilterAdaptation();
 
         SYS_HEAR_ErrorSubAndEnergy();
 
         WDRC_Main();
         
+        FBC_FilterAdaptation();
+
         SYS_HEAR_ApplySubbandGain();
 
         FBC_DoFreqShift();

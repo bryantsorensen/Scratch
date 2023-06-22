@@ -18,7 +18,8 @@
 #define     AGCO_ATK_TC     (1.0/32.0)      // TODO: Convert to fixed point
 #define     AGCO_REL_TC     (1.0/512.0)
 
-#define     MAX_REV_DELAY   32      // USE POWER OF TWO for easy roll-over
+#define     MAX_REV_DELAY       32          // USE POWER OF TWO for easy roll-over
+#define     MAX_REV_DLY_MASK    (MAX_REV_DELAY-1)
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -43,16 +44,15 @@ struct strSYS
     frac16_t    DynamicGainLog2[WOLA_NUM_BINS];
     frac16_t    LimitedFwdGain[WOLA_NUM_BINS];
 
-    frac24_t    RevAnaIn[BLOCK_SIZE];
     frac24_t    RevDelayBuf[MAX_REV_DELAY];
-    int24_t     RevDlyPtr;
-    Complex24   RevAnaBuf[WOLA_NUM_BINS][NUM_FBC_ANA_TAPS];
+    int24_t     RevBufPtr;      // Points to where to put samples into RevDelayBuf
+    frac24_t    RevAnaIn[BLOCK_SIZE];
+    Complex24   RevAnaBuf[FBC_REV_ANA_BUF_SIZE][WOLA_NUM_BINS];     // Order dimensions this way to pass RevAnaBuf[] as pointer
+    int24_t     RevAnaPtr;      // Points to latest samples in RevAnaBuf; start point for filtering and adaptation
     frac48_t    RevEnergy[WOLA_NUM_BINS];
 
     strWOLA     FwdWOLA;
     strWOLA     RevWOLA;
-
-    double      MaxVal;     // TODO: Remove this after testing
 };
 
 

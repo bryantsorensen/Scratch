@@ -38,12 +38,15 @@ int24_t tap;
         SYS.FwdGainLog2[i] = to_frac16(0);  // Unity gain
         SYS.FwdSynBuf[i] = to_frac24(0);    // Complex, both parts set to 0
 
-        for (tap = 0; tap < NUM_FBC_ANA_TAPS; tap++)
-            SYS.RevAnaBuf[i][tap] = to_frac24(0);
+        for (tap = 0; tap < FBC_REV_ANA_BUF_SIZE; tap++)
+            SYS.RevAnaBuf[tap][i] = to_frac24(0);
 
         SYS.RevEnergy[i] = to_frac48(0);
     }
-    
+
+    SYS.RevBufPtr = 0;
+    SYS.RevAnaPtr = -1;     // Back up one sample so pre-adjust goes to 0
+
     for (i = 0; i < MAX_REV_DELAY; i++)
         SYS.RevDelayBuf[i] = to_frac24(0);
 
@@ -64,7 +67,6 @@ int24_t tap;
             EQ_Params.Profile.BinGain[i] = to_frac16(0);
     }
 
-    SYS.MaxVal = 0.0;
 }
 
 
@@ -75,8 +77,9 @@ int24_t i;
 
     for (i = 0; i < BLOCK_SIZE; i++)
     {
-        SYS.FwdAnaIn[i] = mult_log2(SYS.InBuf[i], SYS_Params.Persist.InpMicGain);
+        SYS.FwdAnaIn[i] = mult_log2(SYS.InBuf[i], SYS.MicCalGainLog2);
     }
+    // TODO: If need to ramp input on start-up, modify SYS.MicCalGainLog2 here until it matches SYS_Params.Persist.InpMicGain
 }
 
 
@@ -104,32 +107,37 @@ frac24_t Ar, Ai;
 void SYS_HEAR_WolaRevAnalysis()
 {
 int24_t i;
-int24_t dp;     // Delay pointer
+int24_t bufp, dlyp;     // Buffer and Delay pointers
 frac24_t Ar, Ai;
 
-// TODO: Correctly emulate delay buffer
-    for (i = 0, dp = SYS.RevDlyPtr; i < BLOCK_SIZE; i++)
+    bufp = SYS.RevBufPtr;       // buffer pointer; where to put samples into RevDelayBuf
+    dlyp = (bufp - FBC_Params.Persist.BulkDelay) & MAX_REV_DLY_MASK;    // Delay pointer into buffer; where to get samples from RevDelayBuf to put into RevAnaIn
+    for (i = 0; i < BLOCK_SIZE; i++)
     {
-        SYS.RevDelayBuf[i] = SYS.OutBuf[i];
-        SYS.RevAnaIn[i] = SYS.RevDelayBuf[dp];
-        dp = (dp + 1) & (MAX_REV_DELAY-1);      // increment delay pointer, modulo max delay
+        SYS.RevDelayBuf[bufp] = SYS.OutBuf[i];      // Get latest samples from OutBuf, put into delay buffer
+        SYS.RevAnaIn[i] = SYS.RevDelayBuf[dlyp];    // Get delayed sample from RevDelayBuf, copy to analysis input
+        bufp = (bufp + 1) & MAX_REV_DLY_MASK;       // increment buffer pointer, modulo buffer size
+        dlyp = (dlyp + 1) & MAX_REV_DLY_MASK;       // increment delay pointer, modulo buffer size
     }
-    SYS.RevDlyPtr = dp;
+    SYS.RevBufPtr = bufp;     // update pointer
 
-    WOLA_Analyze(&SYS.RevWOLA, SYS.RevAnaIn, SYS.RevAnaBuf[0]);     // Ignoring return value
+    // Adjust circular pointer into reverse analysis buffer
+    dlyp = (SYS.RevAnaPtr+1) & FBC_REV_ANA_SIZE_MASK;   // Point to newest value (overwrite of oldest value)
+    SYS.RevAnaPtr = dlyp;     
+
+    WOLA_Analyze(&SYS.RevWOLA, SYS.RevAnaIn, SYS.RevAnaBuf[dlyp]);      // Ignoring return value
 
     if (WOLA_STACKING == WOLA_STACKING_EVEN)
-        SYS.RevAnaBuf[0][0].SetImag(0.0);                  // Clear out Nyquist frequency to simplify things for Even stacking
+        SYS.RevAnaBuf[dlyp][0].SetImag(0.0);        // Clear out Nyquist frequency to simplify things for Even stacking
 
-// TODO: Correctly emulate analysis buffer
+    // Scale data into buffer, calculate energy
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
-        Ar = SYS.RevAnaBuf[0][i].Real();    Ai = SYS.RevAnaBuf[0][i].Imag();
-        Ar *= WOLA_ANA_POSTSCALE;           Ai *= WOLA_ANA_POSTSCALE;      // Emulate block floating point
-        SYS.RevAnaBuf[0][i].SetVal(Ar, Ai);
+        Ar = SYS.RevAnaBuf[dlyp][i].Real();     Ai = SYS.RevAnaBuf[dlyp][i].Imag();
+        Ar *= WOLA_ANA_POSTSCALE;               Ai *= WOLA_ANA_POSTSCALE;       // Emulate block floating point
+        SYS.RevAnaBuf[dlyp][i].SetVal(Ar, Ai);
         SYS.RevEnergy[i] = sat48(Ar*Ar + Ai*Ai);
     }   
-    
 }
 
 void SYS_HEAR_ErrorSubAndEnergy()
@@ -143,8 +151,8 @@ frac24_t Er, Ei;
             SYS.Error[i] = SYS.FwdAnaBuf[i] - FBC.FiltSig[i];
         else
             SYS.Error[i] = SYS.FwdAnaBuf[i];
-        Er = SYS.Error[i].Real();   Ei = SYS.Error[i].Imag();
 
+        Er = SYS.Error[i].Real();   Ei = SYS.Error[i].Imag();
         SYS.BinEnergy[i] = sat48(Er*Er + Ei*Ei);
         SYS.BinEnergyLog2[i] = log2(SYS.BinEnergy[i]);
     }
@@ -207,5 +215,6 @@ frac16_t LevelLog2;
         else
             SYS.AgcoGainLog2 = BbGainLog2;      // Otherwise apply all the gain possible
         SYS.OutBuf[i] = mult_log2(SYS.FwdSynOut[i], SYS.AgcoGainLog2);
+        SYS.OutBuf[i] = rnd_sat24(mult_log2(SYS.OutBuf[i], SYS_Params.Persist.OutpRcvrGain));      // Apply receiver calibration separately
     }
 }

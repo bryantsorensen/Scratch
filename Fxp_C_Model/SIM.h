@@ -54,8 +54,11 @@ enum enWdrcFiles
 enum enFbcFiles
 {
     FbcCoeffs = 0,
+    FbcCoefMag,
     FbcAdaptShift,
     FbcSinusoid,
+    FbcESmooth,
+    FbcBeSmooth,
     NUM_FBC_FILES
 };
 

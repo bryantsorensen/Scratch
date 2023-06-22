@@ -38,8 +38,13 @@ then we could miss gains that are turned down as it swamps their negative gain (
     {
     // Don't include NR; it is unity by default at reset or rest
 
-        WdrcMaxGainLog2 = max16(WDRC.Gain[CurCh][1], WDRC.Gain[CurCh][2]);
-        WdrcMaxGainLog2 = max16(WdrcMaxGainLog2, WDRC.Gain[CurCh][3]);
+        if (WDRC_Params.Profile.Enable)
+        {
+            WdrcMaxGainLog2 = max16(WDRC.Gain[CurCh][1], WDRC.Gain[CurCh][2]);
+            WdrcMaxGainLog2 = max16(WdrcMaxGainLog2, WDRC.Gain[CurCh][3]);
+        }
+        else
+            WdrcMaxGainLog2 = to_frac16(0);
         TargetGainBinLog2 = BbTargetGainLog2 + WdrcMaxGainLog2;
     // Now distribute gain across all bins in that channel
         for (bin = WDRC.ChannelStartBin[CurCh]; bin <= WDRC.ChannelLastBin[CurCh]; bin++)
@@ -50,28 +55,38 @@ then we could miss gains that are turned down as it swamps their negative gain (
     FBC.EndBin = (FBC_START_BIN + FBC_BINS_PER_CALL - 1);
     FBC.EndBin = (FBC.EndBin > FBC_END_BIN) ? FBC_END_BIN : FBC.EndBin;
 
-    for (bin = FBC_START_BIN; bin <= FBC_END_BIN; bin++)
-    {
-        FBC.AdaptShift[bin] = FBC_Params.Profile.ActiveShift;
-        FBC.GainLimLog2[bin] = to_frac16(0);        // Set to unity (max)
-    }
-
-    // Zero out coeffs and fed-back output analysis buffer
+    // Set adapt speeds, clear gain limit
+    // Zero out coeffs and set CoefMag to low value
     for (bin = 0; bin < WOLA_NUM_BINS; bin++)
     {
+        FBC.AdaptShift[bin] = FBC_Params.Profile.ActiveShift;   // used for debug tracking, give it some value
+        FBC.GainLimLog2[bin] = to_frac16(0);                    // Set to unity (max)
         for (i = 0; i < FBC_COEFFS_PER_BIN; i++)
             FBC.Coeffs[bin][i].SetVal(to_frac24(0), to_frac24(0));
         FBC.CoefMag[bin] = to_frac16(-23.0);
+
+        FBC.FiltSig[bin] = to_frac24(0.0);
+
+        FBC.BEEnergy[bin] = to_frac48(1.953125e-3);
+        FBC.ASmoothed[bin] = to_frac48(1.953125e-3);
+        FBC.ESmoothed[bin] = to_frac48(1.953125e-3);
+        FBC.BESmoothed[bin] = to_frac48(1.953125e-3);
     }
+
 
     // Create intermediate leakage average between fast and slow leakage; 
     // if these are close, could wind up being equal to one or the other (which is OK)
     FBC.IntermLeak = (FBC_Params.Persist.LeakFast + FBC_Params.Persist.LeakSlow) >> 1;  
 
-    SYS.RevDlyPtr = FBC_Params.Persist.BulkDelay;       // NON-STANDARD - init SYS delay with FBC param
-
-    FBC.Sinusoid[0].SetVal(to_frac24(0x7FFFFF), to_frac24(0));                          // y[n-2] - used for multiplication
-    FBC.Sinusoid[1].SetVal(FBC_Params.Profile.CosInit, FBC_Params.Profile.SineInit);    // y[n-1]
+    FBC.Sinusoid[0].SetVal(to_frac24(0.0), to_frac24(0));                                   // y[n-2]
+    FBC.FreqShiftEnable =   (FBC_Params.Profile.FreqShStartBin >= 0) &&
+                            (FBC_Params.Profile.FreqShStartBin < WOLA_NUM_BINS) &&
+                            (FBC_Params.Profile.FreqShEndBin >= FBC_Params.Profile.FreqShStartBin) && 
+                            (FBC_Params.Profile.FreqShEndBin < WOLA_NUM_BINS);
+    if (FBC.FreqShiftEnable)
+        FBC.Sinusoid[1].SetVal(FBC_Params.Profile.CosInit, FBC_Params.Profile.SineInit);    // y[n-1]
+    else
+        FBC.Sinusoid[1] = FBC.Sinusoid[0];      // set to 0 on disabled
 }
 
 
@@ -86,9 +101,9 @@ int24_t i;
     for (i = 0; i < WOLA_NUM_BINS; i++)
     {
     // Create B + E
-        FBC.BEEnergy[i] = SYS.BinEnergy[i] + SYS.RevEnergy[i];      // Add in the linear domain
-        FBC.ASmoothed[i] = dualTC_Smooth_48(SYS.MicEnergy[i], FBC.ASmoothed[i], FBC_LEVEL_ATK_SHIFT, FBC_LEVEL_REL_SHIFT);
-        FBC.ESmoothed[i] = dualTC_Smooth_48(SYS.BinEnergy[i], FBC.ESmoothed[i], FBC_LEVEL_ATK_SHIFT, FBC_LEVEL_REL_SHIFT);
+        FBC.BEEnergy[i] = shr((SYS.BinEnergy[i] + SYS.RevEnergy[i]), 1);      // Add in the linear domain, remove extra sign bit
+        FBC.ASmoothed[i] = dualTC_Smooth_48(SYS.MicEnergy[i]*0.5, FBC.ASmoothed[i], FBC_LEVEL_ATK_SHIFT, FBC_LEVEL_REL_SHIFT);      // TODO: Do we need 0.5 scale?
+        FBC.ESmoothed[i] = dualTC_Smooth_48(SYS.BinEnergy[i]*0.5, FBC.ESmoothed[i], FBC_LEVEL_ATK_SHIFT, FBC_LEVEL_REL_SHIFT);      // TODO: Do we need 0.5 scale?
         FBC.BESmoothed[i] = dualTC_Smooth_48(FBC.BEEnergy[i], FBC.BESmoothed[i], FBC_LEVEL_ATK_SHIFT, FBC_LEVEL_REL_SHIFT);
     }
 }
@@ -97,26 +112,29 @@ int24_t i;
 void FBC_HEAR_DoFiltering()
 {
 int24_t bin;
-int24_t tap;
+int24_t cf;
 int24_t BufDly;
 accum_t Ar, Ai;
 frac24_t Sr, Si;
 frac24_t Cr, Ci;
 
-// TODO: Should I apply scaling factor to FIR products, to give FBC coeffs more room to grow?
-// Also have to compensate when calculating FBC MaxGain
+    // Filter the subband version of the fed-back output by the FBC coefficients
 
     for (bin = 0; bin < WOLA_NUM_BINS; bin++)
     {
         Ar = to_accum(0);   Ai = to_accum(0);
-        for (tap = 0, BufDly = 0; tap < FBC_COEFFS_PER_BIN; tap++)
+        BufDly = SYS.RevAnaPtr;
+        for (cf = 0; cf < FBC_COEFFS_PER_BIN; cf++)
         {
-            Sr = SYS.RevAnaBuf[bin][BufDly].Real(); Si = SYS.RevAnaBuf[bin][BufDly].Imag();
-            BufDly += FBC_COEFF_SPACING;
-            Cr = FBC.Coeffs[bin][tap].Real();       Ci = FBC.Coeffs[bin][tap].Imag();
+            Sr = SYS.RevAnaBuf[BufDly][bin].Real(); Si = SYS.RevAnaBuf[BufDly][bin].Imag();
+            BufDly = (BufDly-FBC_COEFF_SPACING)&FBC_REV_ANA_SIZE_MASK;
+            Cr = FBC.Coeffs[bin][cf].Real();        Ci = FBC.Coeffs[bin][cf].Imag();
             Ar += Sr * Cr;      Ai += Sr * Ci;
             Ar -= Si * Ci;      Ai += Si * Cr;
         }
+    // Give some headroom to coefficients; by shifting left here, we make larger the value which is subtracted
+    // to create Error, meaning more cancellation, meaning the coefficients will adapt to be smaller to balance
+        Ar = shl(Ar, FBC_FILT_SHIFT);   Ai = shl(Ai, FBC_FILT_SHIFT);
         FBC.FiltSig[bin].SetVal(rnd_sat24(Ar), rnd_sat24(Ai));
     }
 }
@@ -126,6 +144,7 @@ void FBC_FilterAdaptation()
 {
 int24_t bin;
 int24_t cf;
+int24_t MuNorm;
 int24_t GainMuAdj;
 frac48_t ASmoothShifted;
 int24_t LeakSh;
@@ -139,29 +158,21 @@ frac24_t Sr, Si;
 frac24_t Tr, Ti;
 int24_t BufDly;     // Delay into output analysis buffer (treats buffer as FIFO, with newest value at offset 0)
 
-// TODO: Put in simulation code to emulate action of FIFOs
-/*
-Emulate the FIFO
-SYS.RevAnaBuf[bin][0] = newest analysis result
-SYS.RevAnaBuf[bin][1] = second-to-newest analysis result
-...
-SYS.RevAnaBuf[bin][K-1] = oldest analysis result
-*/
     if (FBC_Params.Profile.Enable)
     {
         for (bin = FBC.StartBin; bin <= FBC.EndBin; bin++)
         {
         // Determine MuShift, based on log2(||B+E||^2), per-bin offset, gain below target, and mu parameter
 
-        // TODO: Add in NR gain
-            DynBinGainLog2 = SYS.AgcoGainLog2 + SYS.MicCalGainLog2 + WDRC.BinGainLog2[bin]; // + NR.BinGainLog2[bin];
+            DynBinGainLog2 = SYS.AgcoGainLog2 + SYS.MicCalGainLog2 + WDRC.BinGainLog2[bin] + NR.BinGainLog2[bin];   // Collect active gains
             GainMuAdj = (int24_t)shr((FBC.TargetGainLog2[bin] - DynBinGainLog2), 15);    // T - D < 0 --> D > T --> no adjust; T - D > 0 --> D < T --> adjust accordingly
                                                             // Shift by 15 so that every 0.5 of diff in log2 (3dB) adjusts MuShift by 1 count
             GainMuAdj = (GainMuAdj < 0) ? 0 : GainMuAdj;    // Only take positive results
             GainMuAdj = (GainMuAdj > MAX_GAIN_MU_ADJ) ? MAX_GAIN_MU_ADJ : GainMuAdj;    // limit at top
 
-        // TODO: Do we need to add bias to BESmoothed, before taking log2abs? If so, can this be a fixed value?
-            MuShift = FBC_Params.Profile.ActiveShift + GainMuAdj + FBC_Params.Persist.MuOffset[bin] + log2abs(FBC.BESmoothed[bin]);
+            MuNorm = log2_int24(FBC.BESmoothed[bin]);      // Account for BESmoothed being in squared domain
+            MuNorm = (MuNorm < FBC_MU_NORM_BIAS) ? FBC_MU_NORM_BIAS : MuNorm;       // Limit by bias
+            MuShift = FBC_Params.Profile.ActiveShift + GainMuAdj + FBC_Params.Persist.MuOffset[bin] + MuNorm;
             FBC.AdaptShift[bin] = MuShift;      // Save for debugging
 
         // Determine LeakSh based on energies at different points
@@ -187,20 +198,21 @@ SYS.RevAnaBuf[bin][K-1] = oldest analysis result
 
             Er = SYS.Error[bin].Real();     Ei = SYS.Error[bin].Imag();     // get current error signal
             Sr = to_frac24(0);              Si = to_frac24(0);              // Clear out coeff sum
-            for (cf = 0, BufDly = 0; cf < FBC_COEFFS_PER_BIN; cf++)
+            BufDly = SYS.RevAnaPtr;
+            for (cf = 0; cf < FBC_COEFFS_PER_BIN; cf++)
             {
-            // FBC.Coeffs[c][n] = FBC.Coeffs[c][n-1]*Leak + (conj(Err[n])*B[-c])>>norm_and_mu_shift)
+            // FBC.Coeffs[c][n] = FBC.Coeffs[c][n-1]*Leak + (conj(Err[n])*B[n-c])>>norm_and_mu_shift)
             // (Br + j*Bi)*(Er - j*Ei) = (Br*Er + Bi*Ei) + j*(Bi*Er - Br*Ei)
-                Br = SYS.RevAnaBuf[bin][BufDly].Real();  Bi = SYS.RevAnaBuf[bin][BufDly].Imag();  BufDly += FBC_COEFF_SPACING;
-                Ar  = Br * Er;              Ai  = Bi * Er;
-                Ar += Bi * Ei;              Ai -= Br * Ei;
+                Br = SYS.RevAnaBuf[BufDly][bin].Real();  Bi = SYS.RevAnaBuf[BufDly][bin].Imag();    BufDly = (BufDly-FBC_COEFF_SPACING)&FBC_REV_ANA_SIZE_MASK;
+                Ar  = Br * Er;              Ai  = -Bi * Er;
+                Ar += Bi * Ei;              Ai += Br * Ei;
                 Ar = shs(Ar, MuShift);      Ai = shs(Ai, MuShift);
                 Cr = FBC.Coeffs[bin][cf].Real();        Ci = FBC.Coeffs[bin][cf].Imag();
-                Ar += Cr;                   Ai += Ci;
+                Ar += Cr;                   Ai += Ci;               // TODO: Determine if multiply by leakage is faster than subtract of shift
                 Ar -= shr(Cr, LeakSh);      Ai -= shr(Ci, LeakSh);
                 Tr = rnd_sat24(Ar);         Ti = rnd_sat24(Ai);     // Back to single precision
                 Sr += Tr;                   Si += Ti;               // Sum the new coefficients in this bin
-                FBC.Coeffs[cf][bin].SetVal(Tr, Ti);                  // Update the coefficients
+                FBC.Coeffs[bin][cf].SetVal(Tr, Ti);                 // Update the coefficients
             }
 
         // Estimate FB magnitude in each bin by taking log2(sum(coeffs)) in the bin
@@ -209,7 +221,7 @@ SYS.RevAnaBuf[bin][K-1] = oldest analysis result
 
         // Update FBC maximum gain limit, based on CoefMag and current gain
             if (FBC_Params.Profile.GainLimitEnable)
-                FBC.GainLimLog2[bin] = FBC_Params.Profile.GainLimitMax - FBC.CoefMag[bin] 
+                FBC.GainLimLog2[bin] = FBC_Params.Profile.GainLimitMax - (FBC.CoefMag[bin] + FBC_FILT_SHIFT_GAIN_LOG2)
                     -(SYS.AgcoGainLog2 + SYS.MicCalGainLog2 + SYS_Params.Persist.OutpRcvrGain + EQ_Params.Profile.BroadbandGain + SYS_Params.Profile.VCGain) 
                     - WDRC_RESERVE_GAIN;
             else
@@ -221,7 +233,7 @@ SYS.RevAnaBuf[bin][K-1] = oldest analysis result
             FBC.StartBin = FBC_START_BIN;
         else
             FBC.StartBin = FBC.EndBin + 1;
-        FBC.EndBin = FBC.StartBin + FBC_BINS_PER_CALL;
+        FBC.EndBin = FBC.StartBin + FBC_BINS_PER_CALL - 1;
         FBC.EndBin = (FBC.EndBin > FBC_END_BIN) ? FBC_END_BIN : FBC.EndBin;
 
     }
@@ -264,27 +276,29 @@ frac24_t ResCoef;       // Resonance coefficient for mults
 
     if (FBC_Params.Profile.Enable)
     {
-    // Multiply synthesis input by complex sinusoid to perform frequency shift
-
-        for (i = FBC_Params.Profile.FreqShStartBin; i <= FBC_Params.Profile.FreqShEndBin; i++)
+        if (FBC.FreqShiftEnable)
         {
+        // Multiply synthesis input by complex sinusoid to perform frequency shift
             Sr = FBC.Sinusoid[0].Real();    Si = FBC.Sinusoid[0].Imag();    // Get y[n-2], complex
-            Dr = SYS.FwdSynBuf[i].Real();   Di = SYS.FwdSynBuf[i].Imag();
+            for (i = FBC_Params.Profile.FreqShStartBin; i <= FBC_Params.Profile.FreqShEndBin; i++)
+            {
+                Dr = SYS.FwdSynBuf[i].Real();   Di = SYS.FwdSynBuf[i].Imag();
 
-            Ar  = Sr * Dr;      Ai  = Sr * Di;
-            Ar -= Si * Di;      Ai += Si * Dr;
+                Ar  = Sr * Dr;      Ai  = Sr * Di;
+                Ar -= Si * Di;      Ai += Si * Dr;
 
-            SYS.FwdSynBuf[i].SetVal(rnd_sat24(Ar), rnd_sat24(Ai));
+                SYS.FwdSynBuf[i].SetVal(rnd_sat24(Ar), rnd_sat24(Ai));
+            }
+
+        // Create next complex sinusoid sample
+
+            ResCoef = FBC_Params.Profile.CosInit;       // This value is 1/2 the resonator coefficient
+            Sr = FBC.Sinusoid[1].Real();    Si = FBC.Sinusoid[1].Imag();    // Get y[n-1], complex
+            Ar = Sr * ResCoef;              Ai = Si * ResCoef;              // Mult a*y[n-1]
+            Ar = shl(Ar, 1);                Ai = shl(Ai, 1);                // Account for coeff being on [-2.0, 2.0)
+            Ar -= FBC.Sinusoid[0].Real();   Ai -= FBC.Sinusoid[0].Imag();   // Subtract y[n-2]
+            FBC.Sinusoid[0].SetVal(Sr, Si);                                 // Move y[n-1] --> y[n-2]
+            FBC.Sinusoid[1].SetVal(rnd_sat24(Ar), rnd_sat24(Ai));           // Update y[n-1] with latest result
         }
-
-    // Create next complex sinusoid sample
-
-        ResCoef = FBC_Params.Profile.CosInit;       // This value is 1/2 the resonator coefficient
-        Sr = FBC.Sinusoid[1].Real();    Si = FBC.Sinusoid[1].Imag();    // Get y[n-1], complex
-        Ar = Sr * ResCoef;              Ai = Si * ResCoef;              // Mult a*y[n-1]
-        Ar = shl(Ar, 1);                Ai = shl(Ai, 1);                // Account for coeff being on [-2.0, 2.0)
-        Ar -= FBC.Sinusoid[0].Real();   Ai -= FBC.Sinusoid[0].Imag();   // Subtract y[n-2]
-        FBC.Sinusoid[0].SetVal(Sr, Si);                                 // Move y[n-1] --> y[n-2]
-        FBC.Sinusoid[1].SetVal(rnd_sat24(Ar), rnd_sat24(Ai));           // Update y[n-1] with latest result
     }
 }

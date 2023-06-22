@@ -63,6 +63,24 @@ struct strWDRC
                 ChannelLastBin {(WDRC_START_BIN_CHAN1-1), (WDRC_START_BIN_CHAN2-1), (WDRC_START_BIN_CHAN3-1), (WDRC_START_BIN_CHAN4-1),
                                 (WDRC_START_BIN_CHAN5-1), (WDRC_START_BIN_CHAN6-1), (WDRC_START_BIN_CHAN7-1), (WOLA_NUM_BINS-1)}
     {
+    unsigned i, j;
+
+        CurrentChannel = 0;     // Reset
+    // Set energies, levels to low values.  Reset gains to unity in log2 (0 --> 1.0 linear)
+        for (i = 0; i < WDRC_NUM_CHANNELS; i++)
+        {
+            ChanEnergyLog2[i] = to_frac16(-40.0);
+            LevelLog2[i] = to_frac16(-40.0);
+            ChanGainLog2[i] = to_frac16(0);
+            for (j = 0; j < NUM_WDRC_REGIONS; j++)
+            {
+                Gain[i][j] = to_frac16(0);
+                Thresh[i][j] = to_frac16(0);
+                Slope[i][j] = to_frac16(0);
+            }
+        }
+        for (i = 0; i < WOLA_NUM_BINS; i++)
+            BinGainLog2[i] = to_frac16(0);
     }
     ~strWDRC() {};
 

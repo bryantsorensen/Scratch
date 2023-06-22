@@ -18,44 +18,35 @@ void WDRC_Init()
 {
 uint8_t i;
 
-    WDRC.CurrentChannel = 0;     // Reset
-// Set energies, levels to low values.  Reset gains to unity in log2 (0 --> 1.0 linear)
-    for (i = 0; i < WDRC_NUM_CHANNELS; i++)
+    if (WDRC_Params.Profile.Enable)
     {
-        WDRC.ChanEnergyLog2[i] = to_frac16(-40.0);
-        WDRC.LevelLog2[i] = to_frac16(-40.0);
-        WDRC.ChanGainLog2[i] = 0;
+    // Convert parameters to working values
+        for (i = 0; i < WDRC_NUM_CHANNELS; i++)
+        {
+            WDRC.Gain[i][0] = WDRC_Params.Profile.Gain[i][0];
+            WDRC.Gain[i][1] = WDRC_Params.Profile.Gain[i][1];
+            WDRC.Gain[i][2] = WDRC_Params.Profile.Gain[i][2];
+            WDRC.Gain[i][3] = WDRC_Params.Profile.Gain[i][3];
+
+            WDRC.Thresh[i][0] = WDRC_Params.Profile.Thresh[i][0];
+            WDRC.Thresh[i][1] = WDRC_Params.Profile.Thresh[i][1];
+            WDRC.Thresh[i][2] = WDRC_Params.Profile.Thresh[i][2];
+            WDRC.Thresh[i][3] = WDRC_Params.Profile.Thresh[i][3];
+            WDRC.Thresh[i][4] = MAX_VAL16;     // Upper numeric limit
+
+        //    Slope[N] = (Gain[N] - Gain[N-1])/(Thresh[N] - Thresh[N-1])
+        // TODO: Replace these divides by fixed-point iterative approximations
+
+            WDRC.Slope[i][0] = WDRC_Params.Profile.ExpSlope[i];       // Start with expansion slope
+            WDRC.Slope[i][1] = (WDRC.Gain[i][1] - WDRC.Gain[i][0])/(WDRC.Thresh[i][1] - WDRC.Thresh[i][0]);
+            WDRC.Slope[i][1] = (WDRC.Gain[i][2] - WDRC.Gain[i][1])/(WDRC.Thresh[i][2] - WDRC.Thresh[i][1]);
+            WDRC.Slope[i][1] = (WDRC.Gain[i][3] - WDRC.Gain[i][2])/(WDRC.Thresh[i][3] - WDRC.Thresh[i][2]);
+            WDRC.Slope[i][4] = to_frac16(-1.0);        // Always fixed at -1.0 for limiting
+
+        // Now finish Gain4 calc, knowing that Slope4 = -1
+            WDRC.Gain[i][4] = (WDRC.Thresh[i][3] - WDRC.Thresh[i][4]) + WDRC.Gain[i][3];  // WDRC.Slope[4]*(WDRC.Thresh[4] - WDRC.Thresh[3]) + WDRC.Gain[3];
+        }
     }
-    for (i = 0; i < WOLA_NUM_BINS; i++)
-        WDRC.BinGainLog2[i] = 0;
-
-// Convert parameters to working values
-    for (i = 0; i < WDRC_NUM_CHANNELS; i++)
-    {
-        WDRC.Gain[i][0] = WDRC_Params.Profile.Gain[i][0];
-        WDRC.Gain[i][1] = WDRC_Params.Profile.Gain[i][1];
-        WDRC.Gain[i][2] = WDRC_Params.Profile.Gain[i][2];
-        WDRC.Gain[i][3] = WDRC_Params.Profile.Gain[i][3];
-
-        WDRC.Thresh[i][0] = WDRC_Params.Profile.Thresh[i][0];
-        WDRC.Thresh[i][1] = WDRC_Params.Profile.Thresh[i][1];
-        WDRC.Thresh[i][2] = WDRC_Params.Profile.Thresh[i][2];
-        WDRC.Thresh[i][3] = WDRC_Params.Profile.Thresh[i][3];
-        WDRC.Thresh[i][4] = MAX_VAL16;     // Upper numeric limit
-
-    //    Slope[N] = (Gain[N] - Gain[N-1])/(Thresh[N] - Thresh[N-1])
-    // TODO: Replace these divides by fixed-point iterative approximations
-
-        WDRC.Slope[i][0] = WDRC_Params.Profile.ExpSlope[i];       // Start with expansion slope
-        WDRC.Slope[i][1] = (WDRC.Gain[i][1] - WDRC.Gain[i][0])/(WDRC.Thresh[i][1] - WDRC.Thresh[i][0]);
-        WDRC.Slope[i][1] = (WDRC.Gain[i][2] - WDRC.Gain[i][1])/(WDRC.Thresh[i][2] - WDRC.Thresh[i][1]);
-        WDRC.Slope[i][1] = (WDRC.Gain[i][3] - WDRC.Gain[i][2])/(WDRC.Thresh[i][3] - WDRC.Thresh[i][2]);
-        WDRC.Slope[i][4] = to_frac16(-1.0);        // Always fixed at -1.0 for limiting
-
-    // Now finish Gain4 calc, knowing that Slope4 = -1
-        WDRC.Gain[i][4] = (WDRC.Thresh[i][3] - WDRC.Thresh[i][4]) + WDRC.Gain[i][3];  // WDRC.Slope[4]*(WDRC.Thresh[4] - WDRC.Thresh[3]) + WDRC.Gain[3];
-    }
-
 }
 
 
@@ -139,9 +130,9 @@ int24_t i;
             WDRC.CurrentChannel = 0;
         }
     }
-    else
+    else    // If WDRC not enabled, use unity gain
     {
         for (i = 0; i < WOLA_NUM_BINS; i++)
-            WDRC.BinGainLog2[i] = to_frac16(0);     // If WDRC not enabled, use unity gain
+            WDRC.BinGainLog2[i] = to_frac16(0);
     }
 }
