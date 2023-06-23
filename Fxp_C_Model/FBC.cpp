@@ -78,7 +78,7 @@ then we could miss gains that are turned down as it swamps their negative gain (
     // if these are close, could wind up being equal to one or the other (which is OK)
     FBC.IntermLeak = (FBC_Params.Persist.LeakFast + FBC_Params.Persist.LeakSlow) >> 1;  
 
-    FBC.Sinusoid[0].SetVal(to_frac24(0.0), to_frac24(0));                                   // y[n-2]
+    FBC.Sinusoid[0].SetVal(to_frac24(1.0), to_frac24(0.0));                                 // y[n-2]
     FBC.FreqShiftEnable =   (FBC_Params.Profile.FreqShStartBin >= 0) &&
                             (FBC_Params.Profile.FreqShStartBin < WOLA_NUM_BINS) &&
                             (FBC_Params.Profile.FreqShEndBin >= FBC_Params.Profile.FreqShStartBin) && 
@@ -86,7 +86,7 @@ then we could miss gains that are turned down as it swamps their negative gain (
     if (FBC.FreqShiftEnable)
         FBC.Sinusoid[1].SetVal(FBC_Params.Profile.CosInit, FBC_Params.Profile.SineInit);    // y[n-1]
     else
-        FBC.Sinusoid[1] = FBC.Sinusoid[0];      // set to 0 on disabled
+        FBC.Sinusoid[1] = FBC.Sinusoid[0];      // set to init value on disabled
 }
 
 
@@ -201,11 +201,11 @@ int24_t BufDly;     // Delay into output analysis buffer (treats buffer as FIFO,
             BufDly = SYS.RevAnaPtr;
             for (cf = 0; cf < FBC_COEFFS_PER_BIN; cf++)
             {
-            // FBC.Coeffs[c][n] = FBC.Coeffs[c][n-1]*Leak + (conj(Err[n])*B[n-c])>>norm_and_mu_shift)
-            // (Br + j*Bi)*(Er - j*Ei) = (Br*Er + Bi*Ei) + j*(Bi*Er - Br*Ei)
+            // FBC.Coeffs[c][n] = FBC.Coeffs[c][n-1]*Leak + (Err[n]*conj(B[n-c]))>>norm_and_mu_shift
+            // (Br - j*Bi)*(Er + j*Ei) = (Br*Er + Bi*Ei) + j*(Br*Ei - Bi*Er)
                 Br = SYS.RevAnaBuf[BufDly][bin].Real();  Bi = SYS.RevAnaBuf[BufDly][bin].Imag();    BufDly = (BufDly-FBC_COEFF_SPACING)&FBC_REV_ANA_SIZE_MASK;
-                Ar  = Br * Er;              Ai  = -Bi * Er;
-                Ar += Bi * Ei;              Ai += Br * Ei;
+                Ar  = Br * Er;              Ai  = Br * Ei;
+                Ar += Bi * Ei;              Ai -= Bi * Er;
                 Ar = shs(Ar, MuShift);      Ai = shs(Ai, MuShift);
                 Cr = FBC.Coeffs[bin][cf].Real();        Ci = FBC.Coeffs[bin][cf].Imag();
                 Ar += Cr;                   Ai += Ci;               // TODO: Determine if multiply by leakage is faster than subtract of shift

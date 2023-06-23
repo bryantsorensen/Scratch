@@ -70,7 +70,7 @@
 				"DSPConvert": ""
 			},
 			"CosInit": {
-				"Description": "Cosine initialization for frequency shift = cos(2*pi*freq/fs). Frequency must match sine init. Also = 1/2 resonant BQ coeff",
+				"Description": "Cosine initialization for frequency shift = cos(2*pi*freq/fsb). Frequency must match sine init, fsb = subband rate. Also = 1/2 resonant BQ coeff",
 				"UserVisible": 0,
 				"Elements": 1,
 				"UserUnits": "",
@@ -81,7 +81,7 @@
 				"DSPConvert": ""
 			},
 			"SineInit": {
-				"Description": "Sine initialization for frequency shift = sin(2*pi*freq/fs). Frequency must match cos init",
+				"Description": "Sine initialization for frequency shift = sin(2*pi*freq/fsb). Frequency must match cos init, fsb = subband rate",
 				"UserVisible": 0,
 				"Elements": 1,
 				"UserUnits": "",
