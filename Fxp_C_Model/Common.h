@@ -156,8 +156,9 @@ inline frac16_t mul_rnd16(frac16_t a, frac16_t b)
 {
 frac16_t ret;
 
-    accum_t acc = a * b;
-    acc = shl(acc, 7);  // acc <<= 7;   TODO: Replace function with shift operator
+// s1i0f23 * s1i7f16 --> s1i8f39; then with fixed point mult shift, s1i7f40
+// Need to remove 24b to get back to s1i7f16
+    accum_t acc = a * b;    // TODO: replace with scaled integer multiplier, remove correct # of bits
     ret = rnd_sat16(acc);    // TODO: Determine if this is done just by moving the accumulator to the smaller container
     return ret;
 }

@@ -199,7 +199,7 @@
 				"UserMin": -20.0,
 				"List": "",
 				"FractBits": 16,
-				"DSPConvert": 0.166096404744368
+				"DSPConvert": "Input_dB_SPL"
 			},
 			"ExpSlope": {
 				"Description": "WDRC Expansion Region Slope",
@@ -210,7 +210,7 @@
 				"UserMin": -60.0,
 				"List": "",
 				"FractBits": 16,
-				"DSPConvert": 0.166096404744368
+				"DSPConvert": ""
 			}			
 		}
 	}

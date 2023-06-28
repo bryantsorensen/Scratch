@@ -21,7 +21,7 @@
 				"UserMin": -20.0,
 				"List": "",
 				"FractBits": 16,
-				"DSPConvert": 0.166096404744368
+				"DSPConvert": "Output_dB_SPL"
 			},
 			"OutpRcvrGain": {
 				"Description": "Output Receiver Calibration digital gain",

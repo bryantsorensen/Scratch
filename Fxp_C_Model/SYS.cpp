@@ -154,7 +154,7 @@ frac24_t Er, Ei;
 
         Er = SYS.Error[i].Real();   Ei = SYS.Error[i].Imag();
         SYS.BinEnergy[i] = sat48(Er*Er + Ei*Ei);
-        SYS.BinEnergyLog2[i] = log2(SYS.BinEnergy[i]);
+        SYS.BinEnergyLog2[i] = shr(log2_approx(SYS.BinEnergy[i]),1);    // divide by 2 to account for being squared
     }
 
 }

@@ -19,13 +19,16 @@ LOG2_TO_DB20 = math.log10(2.0)*20.0
 DB20_TO_LOG2 = 1.0/LOG2_TO_DB20
 LOG2_TO_DB10 = math.log10(2.0)*10.0
 DB10_TO_LOG2 = 1.0/LOG2_TO_DB10
-WDRC_NUM_CHANNELS = 16
+WDRC_NUM_CHANNELS = 8
 WDRC_DECIMATION_RATE = WDRC_NUM_CHANNELS
 WDRC_UPDATE_RATE = (SB_SAMPLE_RATE/WDRC_DECIMATION_RATE)
 NR_DECIMATION_RATE = 8      # Assumes 4 update slices, 8 bins each, total 32 bins
 NR_UPDATE_RATE = (SB_SAMPLE_RATE/NR_DECIMATION_RATE)
 NR_GAIN_LUT_MIN_SNR = -31.0
 NR_GAIN_LUT_MIN = (2.0**(NR_GAIN_LUT_MIN_SNR/8.0)) - 1.0     # The scaling on LUT_MIN_SNR is somewhat arbitrary
+
+dBSPL_FULLSCALE_INPUT = 110.0       # maximum input that achieves full digital scale
+dBSPL_FULLSCALE_OUTPUT = 115.0      # maximum output that comes from full scale digital
 
 def convert_param_from_user_to_fw(userval, param_def_info, def_param_name):
 # Get the parameter info from the following keys of param_def_info
@@ -90,15 +93,21 @@ def convert_param_from_user_to_fw(userval, param_def_info, def_param_name):
             fwmin = usermin
     elif isinstance(convert_val, str):     # if string, use conversion functions
         if convert_val == 'WdrcTC':
-            fw_value = 1.0 - math.exp(-1.0/(userval/WDRC_UPDATE_RATE))
+            tc_in_sec = userval/1000.0
+            fw_value = 1.0 - math.exp(-1.0/(tc_in_sec*WDRC_UPDATE_RATE))
             if NeedFwLimits:
-                fwmax = 1.0 - math.exp(-1.0/(usermax/WDRC_UPDATE_RATE))
-                fwmin = 1.0 - math.exp(-1.0/(usermin/WDRC_UPDATE_RATE))
+                tc_in_sec = usermax/1000.0
+                fwmax = 1.0 - math.exp(-1.0/(tc_in_sec*WDRC_UPDATE_RATE))
+                tc_in_sec = usermin/1000.0
+                fwmin = 1.0 - math.exp(-1.0/(tc_in_sec*WDRC_UPDATE_RATE))
         elif convert_val == 'NrTC':
-            fw_value = 1.0 - math.exp(-1.0/(userval/NR_UPDATE_RATE))
+            tc_in_sec = userval/1000.0
+            fw_value = 1.0 - math.exp(-1.0/(tc_in_sec*NR_UPDATE_RATE))
             if NeedFwLimits:
-                fwmax = 1.0 - math.exp(-1.0/(usermax/NR_UPDATE_RATE))
-                fwmin = 1.0 - math.exp(-1.0/(usermin/NR_UPDATE_RATE))
+                tc_in_sec = usermax/1000.0
+                fwmax = 1.0 - math.exp(-1.0/(tc_in_sec*NR_UPDATE_RATE))
+                tc_in_sec = usermin/1000.0
+                fwmin = 1.0 - math.exp(-1.0/(tc_in_sec*NR_UPDATE_RATE))
         elif convert_val == 'NRMaxReduce':
         # Calc in code: fw_value*GainTableOut + GainTableOut = GainTableOut*(1+fw_value)
             fw_value = ((userval*DB20_TO_LOG2)/NR_GAIN_LUT_MIN) - 1.0       # Remove 1.0 to get fw_value on [0, 1.0)
@@ -110,6 +119,16 @@ def convert_param_from_user_to_fw(userval, param_def_info, def_param_name):
             if NeedFwLimits:
                 fwmax = usermax/(NR_UPDATE_RATE*LOG2_TO_DB10)
                 fwmin = usermin/(NR_UPDATE_RATE*LOG2_TO_DB10)
+        elif convert_val == 'Input_dB_SPL':
+            fw_value = (userval - dBSPL_FULLSCALE_INPUT)*DB20_TO_LOG2        # Convert dB SPL to dBFS, then log2 # TODO: Put in per-channel input scaling
+            if NeedFwLimits:
+                fwmax = (usermax - dBSPL_FULLSCALE_INPUT)*DB20_TO_LOG2
+                fwmin = (usermin - dBSPL_FULLSCALE_INPUT)*DB20_TO_LOG2
+        elif convert_val == 'Output_dB_SPL':
+            fw_value = (userval - dBSPL_FULLSCALE_OUTPUT)*DB20_TO_LOG2
+            if NeedFwLimits:
+                fwmax = (usermax - dBSPL_FULLSCALE_OUTPUT)*DB20_TO_LOG2
+                fwmin = (usermin - dBSPL_FULLSCALE_OUTPUT)*DB20_TO_LOG2
 
     # TODO: Add other conversion functions here as needed
 

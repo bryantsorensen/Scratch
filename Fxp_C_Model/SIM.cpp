@@ -103,7 +103,7 @@ int8_t ExitVal = 0;
                 printf ("Command line options for %s:", argv[0]);
                 printf ("-s <source file name and path>         REQUIRED\n");
                 printf ("-r <results output directory>          REQUIRED\n");
-                printf ("-f <Feedback sim file name and path>   FOR USE WITH FBC SIM\n");
+                printf ("-f <Feedback sim file name and path>   FOR USE WITH FBC SIM - LEAVE OFF FOR NO FB SIM\n");
                 printf ("-h                                     THIS HELP MENU\n");
                 printf ("\nNow exiting...\n\n");
                 ExitVal = 1;

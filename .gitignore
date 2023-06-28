@@ -13,3 +13,5 @@ Fxp_C_Model/FW_Param_Init.cpp
 
 Shared/include/*_ParamStruct.h
 
+Tests/*/Results/*
+Tests/*/Outputs/*

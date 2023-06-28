@@ -15,7 +15,7 @@
 
 infile_name = 'whitenoise_m40dBFS_7sec.wav'
 outfile_name = 'FBC_test_out.wav'
-fbsim_fname = 'lowfreq1__dual_bump2_FBSIM.txt'      # Set this to '' if FB sim not needed for test
+fbsim_fname = 'lowfreq1_m5dB__dual_bump2_m6dB_FBSIM.txt'      # Set this to '' if FB sim not needed for test
 param_fname = 'FBC_Test.json'
 
 #+++++++++++++++++++
@@ -24,13 +24,13 @@ param_fname = 'FBC_Test.json'
 import sys
 import subprocess as subpr
 import os
-import numpy
-import matplotlib.pyplot as mplot
-import math
-import soundfile
+#import numpy
+#import matplotlib.pyplot as mplot
+#import math
+#import soundfile
 from csv import reader as csvread
 import datetime
-from scipy.signal import freqz
+#from scipy.signal import freqz
 
 #+++++++++++++++++++
 # Set up directories and common names
@@ -76,6 +76,8 @@ c_build = "MSBuild.exe " + c_model_name + ".sln /p:Configuration=" + build_confi
 
 rval = subpr.call(c_build, shell=True)
 if (rval != 0):
+    print ('Error in build call!\n')
+    exit(rval)
 
 #+++++++++++++++++++
 # Execute the C code model, create the desired outputs
@@ -98,7 +100,7 @@ if not os.path.exists(resultpath):
 # Create command line string
 infile_path = os.path.join(test_inputs_dir, infile_name)    # Create full path to input .wav file
 
-c_exe_cmd = exefile_name + " -s " + infile_path + " -r " + resultpath + " -d " + outfile_name
+c_exe_cmd = exefile_name + " -s " + infile_path + " -r " + resultpath
 if fbsim_fname != '':       # Add extra option if this test requires FB simulation file
     fbsim_fpath = os.path.join(fbsim_specs_dir, fbsim_fname)
     c_exe_cmd = c_exe_cmd + " -f " + fbsim_fpath
@@ -106,7 +108,8 @@ if fbsim_fname != '':       # Add extra option if this test requires FB simulati
 # Call the C code simulation .exe
 rval = subpr.call(c_exe_cmd, shell=True)
 if (rval != 0):
-
+    print ('Error in exe call!\n')
+    exit (rval)
 
 #+++++++++++++++++++
 os.chdir(thisdir)

@@ -32,7 +32,7 @@ uint8_t i;
             WDRC.Thresh[i][1] = WDRC_Params.Profile.Thresh[i][1];
             WDRC.Thresh[i][2] = WDRC_Params.Profile.Thresh[i][2];
             WDRC.Thresh[i][3] = WDRC_Params.Profile.Thresh[i][3];
-            WDRC.Thresh[i][4] = MAX_VAL16;     // Upper numeric limit
+            WDRC.Thresh[i][4] = to_frac16(0);     // Upper numeric limit - full scale log2 (unity)
 
         //    Slope[N] = (Gain[N] - Gain[N-1])/(Thresh[N] - Thresh[N-1])
         // TODO: Replace these divides by fixed-point iterative approximations
@@ -46,6 +46,7 @@ uint8_t i;
         // Now finish Gain4 calc, knowing that Slope4 = -1
             WDRC.Gain[i][4] = (WDRC.Thresh[i][3] - WDRC.Thresh[i][4]) + WDRC.Gain[i][3];  // WDRC.Slope[4]*(WDRC.Thresh[4] - WDRC.Thresh[3]) + WDRC.Gain[3];
         }
+
     }
 }
 
@@ -73,9 +74,9 @@ int24_t i;
 
         Acc = 0;
         for (i = WDRC.ChannelStartBin[CurCh]; i <= WDRC.ChannelLastBin[CurCh]; i++)
-            Acc += (accum_t)SYS.BinEnergy[i];       // Add in linear domain
+            Acc += (accum_t)SYS.BinEnergy[i];       // Add in linear domain; values are squared
 
-        ChanEnergyLog2 = log2_approx(Acc);
+        ChanEnergyLog2 = shr(log2_approx(Acc),1);       // Divide log2 by 2 to account for squared values
 
         LevelDiff = ChanEnergyLog2 - WDRC.LevelLog2[CurCh];
         Diff0 = ChanEnergyLog2 - WDRC.Thresh[CurCh][0];
