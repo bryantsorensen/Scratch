@@ -84,20 +84,50 @@ int24_t i;
         if (LevelDiff > 0)      // Input level is greater than current level --> attacking
         {
             if (Diff0 < 0)          // input below Thresh0, in expansion region  BE - T0 < 0 ==> BE < T0
-                TC = WDRC_Params.Persist.ExpansAtkTC;
+            {
+                if (LevelDiff > WDRC_Params.Profile.ExpansDiffThresh)
+                    TC = WDRC_Params.Persist.ExpansSupraAtkTC;
+                else
+                    TC = WDRC_Params.Persist.ExpansAtkTC;
+            }
             else if (Diff3 >= 0)    // input above Thresh3, in limiting region  BE - T3 >= 0 ==> BE >= T3
-                TC = WDRC_Params.Persist.LimitAtkTC;
-            else                    // input between T0 and T3
-                TC = WDRC_Params.Persist.CompressAtkTC;
+            {
+                if (LevelDiff > WDRC_Params.Profile.LimitDiffThresh)
+                    TC = WDRC_Params.Persist.LimitSupraAtkTC;
+                else
+                    TC = WDRC_Params.Persist.LimitAtkTC;
+            }
+            else                    // input between T0 and T3 - compress region
+            {
+                if (LevelDiff > WDRC_Params.Profile.CompressDiffThresh)
+                    TC = WDRC_Params.Persist.CompressSupraAtkTC;
+                else
+                    TC = WDRC_Params.Persist.CompressAtkTC;
+            }
         }
         else    // Input level below current level --> release
         {
-            if (Diff0 < 0)
-                TC = WDRC_Params.Persist.ExpansRelTC;
-            else if (Diff3 >= 0)
-                TC = WDRC_Params.Persist.LimitRelTC;
-            else
-                TC = WDRC_Params.Persist.CompressRelTC;
+            if (Diff0 < 0)      // Expansion region
+            {
+                if (-LevelDiff > WDRC_Params.Profile.ExpansDiffThresh)    // Notice negation; if diff is large, use 'supra' TCs
+                    TC = WDRC_Params.Persist.ExpansSupraRelTC;
+                else
+                    TC = WDRC_Params.Persist.ExpansRelTC;
+            }
+            else if (Diff3 >= 0)    // Limiting region
+            {
+                if (-LevelDiff > WDRC_Params.Profile.LimitDiffThresh)
+                    TC = WDRC_Params.Persist.LimitSupraRelTC;
+                else
+                    TC = WDRC_Params.Persist.LimitRelTC;
+            }
+            else            // Compress region
+            {
+                if (-LevelDiff > WDRC_Params.Profile.CompressDiffThresh)
+                    TC = WDRC_Params.Persist.CompressSupraRelTC;
+                else
+                    TC = WDRC_Params.Persist.CompressRelTC;
+            }
         }
 
     // s1i7f16*s1i7f16 --> s1i14f33; shift left 7b to get f40, then HW rnd takes off 24b, back to f16

@@ -1,6 +1,17 @@
 {
 	"WDRC": {
 		"Persist": {
+			"ExpansSupraAtkTC": {
+				"Description": "Expansion Region Supra Attack Time Constant; used when level diff is large",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "WdrcTC"
+			},
 			"ExpansAtkTC": {
 				"Description": "Expansion Region Attack Time Constant",
 				"UserVisible": 1,
@@ -14,6 +25,28 @@
 			},
 			"ExpansRelTC": {
 				"Description": "Expansion Region Release Time Constant",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "WdrcTC"
+			},
+			"ExpansSupraRelTC": {
+				"Description": "Expansion Region Supra Release Time Constant; used when level diff is large",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "WdrcTC"
+			},
+			"CompressSupraAtkTC": {
+				"Description": "Compression Region Supra Attack Time Constant; used when level diff is large",
 				"UserVisible": 1,
 				"Elements": 1,
 				"UserUnits": "ms",
@@ -45,6 +78,28 @@
 				"FractBits": 23,
 				"DSPConvert": "WdrcTC"
 			},
+			"CompressSupraRelTC": {
+				"Description": "Compression Region Supra Release Time Constant; used when level diff is large",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "WdrcTC"
+			},
+			"LimitSupraAtkTC": {
+				"Description": "Limiting Region Supra Attack Time Constant; used when level diff is large",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "WdrcTC"
+			},
 			"LimitAtkTC": {
 				"Description": "Limiting Region Attack Time Constant",
 				"UserVisible": 1,
@@ -58,6 +113,17 @@
 			},
 			"LimitRelTC": {
 				"Description": "Limiting Region Release Time Constant",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "WdrcTC"
+			},
+			"LimitSupraRelTC": {
+				"Description": "Limiting Region Supra Release Time Constant; used when level diff is large",
 				"UserVisible": 1,
 				"Elements": 1,
 				"UserUnits": "ms",
@@ -80,6 +146,39 @@
 				"FractBits": 0,
 				"DSPConvert": ""
 			},
+			"ExpansDiffThresh": {
+				"Description": "WDRC Difference threshold for Expansion region; if diff of input and envelope levels is above this threshold, use the 'supra' TCs",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "dB",
+				"UserMax": 60.0,
+				"UserMin": 0.0,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.166096404744368
+			},				
+			"CompressDiffThresh": {
+				"Description": "WDRC Difference threshold for Compression region; if diff of input and envelope levels is above this threshold, use the 'supra' TCs",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "dB",
+				"UserMax": 60.0,
+				"UserMin": 0.0,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.166096404744368
+			},				
+			"LimitDiffThresh": {
+				"Description": "WDRC Difference threshold for Limiting region; if diff of input and envelope levels is above this threshold, use the 'supra' TCs",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "dB",
+				"UserMax": 60.0,
+				"UserMin": 0.0,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.166096404744368
+			},				
 			"Gain": {
 				"Description": "WDRC Regions Gains",
 				"UserVisible": 1,
