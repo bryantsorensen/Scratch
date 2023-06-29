@@ -39,8 +39,8 @@ uint8_t i;
 
             WDRC.Slope[i][0] = WDRC_Params.Profile.ExpSlope[i];       // Start with expansion slope
             WDRC.Slope[i][1] = (WDRC.Gain[i][1] - WDRC.Gain[i][0])/(WDRC.Thresh[i][1] - WDRC.Thresh[i][0]);
-            WDRC.Slope[i][1] = (WDRC.Gain[i][2] - WDRC.Gain[i][1])/(WDRC.Thresh[i][2] - WDRC.Thresh[i][1]);
-            WDRC.Slope[i][1] = (WDRC.Gain[i][3] - WDRC.Gain[i][2])/(WDRC.Thresh[i][3] - WDRC.Thresh[i][2]);
+            WDRC.Slope[i][2] = (WDRC.Gain[i][2] - WDRC.Gain[i][1])/(WDRC.Thresh[i][2] - WDRC.Thresh[i][1]);
+            WDRC.Slope[i][3] = (WDRC.Gain[i][3] - WDRC.Gain[i][2])/(WDRC.Thresh[i][3] - WDRC.Thresh[i][2]);
             WDRC.Slope[i][4] = to_frac16(-1.0);        // Always fixed at -1.0 for limiting
 
         // Now finish Gain4 calc, knowing that Slope4 = -1
@@ -164,6 +164,6 @@ int24_t i;
     else    // If WDRC not enabled, use unity gain
     {
         for (i = 0; i < WOLA_NUM_BINS; i++)
-            WDRC.BinGainLog2[i] = to_frac16(0);
+            WDRC.BinGainLog2[i] = to_frac16(0.0);
     }
 }

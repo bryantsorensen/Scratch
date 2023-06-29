@@ -69,8 +69,8 @@ struct strWDRC
     // Set energies, levels to low values.  Reset gains to unity in log2 (0 --> 1.0 linear)
         for (i = 0; i < WDRC_NUM_CHANNELS; i++)
         {
-            ChanEnergyLog2[i] = to_frac16(-40.0);
-            LevelLog2[i] = to_frac16(-40.0);
+            ChanEnergyLog2[i] = to_frac16(-24.0);
+            LevelLog2[i] = to_frac16(-24.0);
             ChanGainLog2[i] = to_frac16(0);
             for (j = 0; j < NUM_WDRC_REGIONS; j++)
             {
