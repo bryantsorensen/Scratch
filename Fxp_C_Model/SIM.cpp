@@ -230,6 +230,7 @@ char fname[256];
     if (NR_Params.Profile.Enable)
     {
         sprintf_s(fname, "%s/%s", SIM.ResultPath, "NR_NoiseEst.csv");     fopen_s(&SIM.NrFiles[NrNoiseEst], fname, "w");
+        sprintf_s(fname, "%s/%s", SIM.ResultPath, "NR_FastNoiseEst.csv"); fopen_s(&SIM.NrFiles[NrFastNoiseEst], fname, "w");
         sprintf_s(fname, "%s/%s", SIM.ResultPath, "NR_SpeechEst.csv");    fopen_s(&SIM.NrFiles[NrSpeechEst], fname, "w");
         sprintf_s(fname, "%s/%s", SIM.ResultPath, "NR_SnrEst.csv");       fopen_s(&SIM.NrFiles[NrSNREst], fname, "w");
         sprintf_s(fname, "%s/%s", SIM.ResultPath, "NR_BinGainLog2.csv");  fopen_s(&SIM.NrFiles[NrBinGainL2], fname, "w");
@@ -382,7 +383,8 @@ void SIM_LogFiles()
     SIM_Write48 (SIM.FbcFiles[FbcBeSmooth], FBC.BESmoothed, WOLA_NUM_BINS);
     SIM_WriteComplex24 (SIM.FbcFiles[FbcSinusoid], FBC.Sinusoid, 1);
 
-    SIM_Write16 (SIM.NrFiles[NrNoiseEst], NR.NoiseEst, WOLA_NUM_BINS);
+    SIM_Write16 (SIM.NrFiles[NrNoiseEst], NR.NoiseSlowEst, WOLA_NUM_BINS);
+    SIM_Write16 (SIM.NrFiles[NrFastNoiseEst], NR.NoiseFastEst, WOLA_NUM_BINS);
     SIM_Write16 (SIM.NrFiles[NrSpeechEst], NR.SpeechEst, WOLA_NUM_BINS);
     SIM_Write16 (SIM.NrFiles[NrSNREst], NR.SNREst, WOLA_NUM_BINS);
     SIM_Write16 (SIM.NrFiles[NrBinGainL2], NR.BinGainLog2, WOLA_NUM_BINS);

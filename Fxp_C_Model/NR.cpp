@@ -64,9 +64,8 @@ int24_t bin;
     {
         NR.NoiseSlowEst[bin] = NR_INITIAL_NOISE_ESTIMATE;
         NR.NoiseFastEst[bin] = NR_INITIAL_NOISE_ESTIMATE;
-        NR.NoiseEst[bin] = NR_INITIAL_NOISE_ESTIMATE;
         NR.SpeechEst[bin] = NR_INITIAL_SPEECH_ESTIMATE;
-        NR.SNREst[bin] = NR.SpeechEst[bin] - NR.NoiseEst[bin];
+        NR.SNREst[bin] = NR.SpeechEst[bin] - NR.NoiseSlowEst[bin];
         NR.BinGainLog2[bin] = to_frac16(0);
     }
 }
@@ -99,34 +98,27 @@ frac16_t GainDiff;
         for (bin = NR.StartBin; bin <= NR.EndBin; bin++)
         {
         // NoiseFastEst = NoiseFastTC*BinPower + (1-NoiseFastTC)*NoiseFastEst = NoiseFastTC*(BinPower - NoiseFastEst) + NoiseFastEst
+        // Doing smoothing in log2 domain
             Diff = SYS.BinEnergyLog2[bin] - NR.NoiseFastEst[bin];
             Acc = Diff * NR_Params.Persist.NoiseFastTC + NR.NoiseFastEst[bin];
             NR.NoiseFastEst[bin] = rnd_sat16(Acc);
 
-        // If FastEst < SlowEst then SlowEst = FastEst
-        // Else SlowEst = (1+NoiseSlowCoeff)*SlowEst = SlowEst + NoiseSlowCoeff*SlowEst
+        // SlowEst: in linear = (1+NoiseSlowCoeff)*SlowEst = SlowEst + NoiseSlowCoeff*SlowEst
+        // in log2:  log2(1+NoiseSlowCoeff) + log2(SlowEst); so just convert NoiseSlowCoeff to log2 domain and add
+            NR.NoiseSlowEst[bin] = NR_Params.Persist.NoiseSlowCoeff + NR.NoiseSlowEst[bin];
 
-            if (NR.NoiseFastEst[bin] < NR.NoiseSlowEst[bin])
-                NR.NoiseSlowEst[bin] = NR.NoiseFastEst[bin];
-            else
-            {
-                Acc = NR.NoiseSlowEst[bin] * NR_Params.Persist.NoiseSlowCoeff + NR.NoiseSlowEst[bin];
-                NR.NoiseSlowEst[bin] = rnd_sat16(Acc);
-            }
-
-        // NoiseEst = min(FastEst, SlowEst)
-
-            NR.NoiseEst[bin] = (NR.NoiseFastEst[bin] < NR.NoiseSlowEst[bin]) ? NR.NoiseFastEst[bin] : NR.NoiseSlowEst[bin];
+        // SlowEst = NoiseEst = min(FastEst, SlowEst)
+            NR.NoiseSlowEst[bin] = min16(NR.NoiseFastEst[bin], NR.NoiseSlowEst[bin]);
+            NR.NoiseSlowEst[bin] = max16(NR.NoiseSlowEst[bin], NR_MIN_NOISE_ESTIMATE);  // Don't let noise est go too low
 
         // SpeechEst = (1-SpeechTC)*BinPower + SpeechTC*SpeechEst = SpeechTC*(SpeechEst - BinPower) + BinPower
-
             Diff = NR.SpeechEst[bin] - SYS.BinEnergyLog2[bin];
             Acc = Diff * NR_SPEECH_COEFF + SYS.BinEnergyLog2[bin];
             NR.SpeechEst[bin] = rnd_sat16(Acc);
 
         //  SNR = log2(SpeechEst) - log2(NoiseEst);
 
-            NR.SNREst[bin] = NR.SpeechEst[bin] - NR.NoiseEst[bin];
+            NR.SNREst[bin] = NR.SpeechEst[bin] - NR.NoiseSlowEst[bin];
 
             //  GainTableIndex = floor((SNR - LowerLimit) * UpperLimit);
             //  GainTableIndex = max(GainTableIndex,0);
@@ -138,8 +130,8 @@ frac16_t GainDiff;
     // TODO: The conversion needs to go directly from log2 SNR to log2 gain, AND needs to be much, much simpler;
     // probably need to get rid of DeltaComp correction factor
 
-            Diff = NR.SNREst[bin] - NR_LOWER_LIMIT;
-            Acc = Diff * NR_UPPER_LIMIT;
+            Diff = NR.SNREst[bin] - NR_LOWER_LIMIT_GAIN_TABLE;
+            Acc = Diff * NR_UPPER_LIMIT_GAIN_TABLE;
             Acc = shr(Acc, 9);      // effectively take floor(), integer part of product
             GainTableIndex = (int24_t)upper_accum_to_f24(Acc);
             if (GainTableIndex < 0)
@@ -174,6 +166,7 @@ frac16_t GainDiff;
         if (NR.StartBin >= WOLA_NUM_BINS)
             NR.StartBin = 0;
         NR.EndBin = NR.StartBin + (NR_BINS_PER_CALL - 1);
+        NR.EndBin = (NR.EndBin > WOLA_NUM_BINS) ? WOLA_NUM_BINS : NR.EndBin;
     }
     else
     {

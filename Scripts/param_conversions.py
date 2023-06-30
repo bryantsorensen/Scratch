@@ -22,7 +22,7 @@ DB10_TO_LOG2 = 1.0/LOG2_TO_DB10
 WDRC_NUM_CHANNELS = 8
 WDRC_DECIMATION_RATE = WDRC_NUM_CHANNELS
 WDRC_UPDATE_RATE = (SB_SAMPLE_RATE/WDRC_DECIMATION_RATE)
-NR_DECIMATION_RATE = 8      # Assumes 4 update slices, 8 bins each, total 32 bins
+NR_DECIMATION_RATE = 4      # Assumes 4 update slices, 8 bins each, total 32 bins
 NR_UPDATE_RATE = (SB_SAMPLE_RATE/NR_DECIMATION_RATE)
 NR_GAIN_LUT_MIN_SNR = -31.0
 NR_GAIN_LUT_MIN = (2.0**(NR_GAIN_LUT_MIN_SNR/8.0)) - 1.0     # The scaling on LUT_MIN_SNR is somewhat arbitrary
@@ -115,10 +115,10 @@ def convert_param_from_user_to_fw(userval, param_def_info, def_param_name):
                 fwmax = ((usermax*DB20_TO_LOG2)/NR_GAIN_LUT_MIN) - 1.0
                 fwmin = ((usermin*DB20_TO_LOG2)/NR_GAIN_LUT_MIN) - 1.0
         elif convert_val == 'dBperSec_to_log2':
-            fw_value = userval/(NR_UPDATE_RATE*LOG2_TO_DB10)
+            fw_value = userval/(NR_UPDATE_RATE*LOG2_TO_DB20)
             if NeedFwLimits:
-                fwmax = usermax/(NR_UPDATE_RATE*LOG2_TO_DB10)
-                fwmin = usermin/(NR_UPDATE_RATE*LOG2_TO_DB10)
+                fwmax = usermax/(NR_UPDATE_RATE*LOG2_TO_DB20)
+                fwmin = usermin/(NR_UPDATE_RATE*LOG2_TO_DB20)
         elif convert_val == 'Input_dB_SPL':
             fw_value = (userval - dBSPL_FULLSCALE_INPUT)*DB20_TO_LOG2        # Convert dB SPL to dBFS, then log2 # TODO: Put in per-channel input scaling
             if NeedFwLimits:

@@ -18,9 +18,9 @@
 				"Elements": 1,
 				"UserUnits": "dB/s",
 				"UserMax": 18.0,
-				"UserMin": 4.0,
+				"UserMin": 0.5,
 				"List": "",
-				"FractBits": 23,
+				"FractBits": 16,
 				"DSPConvert": "dBperSec_to_log2"
 			},
 			"GainSmoothTC": {

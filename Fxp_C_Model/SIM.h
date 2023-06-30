@@ -65,6 +65,7 @@ enum enFbcFiles
 enum enNrFiles
 {
     NrNoiseEst = 0,
+    NrFastNoiseEst,
     NrSpeechEst,
     NrSNREst,
     NrBinGainL2,
