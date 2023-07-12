@@ -15,13 +15,11 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Defines
 
-#define     NR_SPEECH_COEFF             to_frac24(0.013244838192804309)     // About 100msec TC
 #define     NR_INITIAL_SPEECH_ESTIMATE  to_frac16(-5.0)
 #define     NR_INITIAL_NOISE_ESTIMATE   to_frac16(-5.0)
 #define     NR_MIN_NOISE_ESTIMATE       to_frac16(-30.0)
 #define     NR_INITIAL_SNR              (NR_INITIAL_SPEECH_ESTIMATE - NR_INITIAL_NOISE_ESTIMATE)
-#define     NR_LOWER_LIMIT_GAIN_TABLE   to_frac16(0.332193)     // log2(10^(1/10))
-#define     NR_UPPER_LIMIT_GAIN_TABLE   to_frac16(7.178408)     // 31/(log2(10^(14/10)) - log2(10^(1/10)))
+#define     NR_GAIN_TABLE_SIZE          32
 
 #define     NR_BINS_PER_CALL            (WOLA_NUM_BINS>>2)      // 8 Make WOLA_NUM_BINS a multiple of this value
 

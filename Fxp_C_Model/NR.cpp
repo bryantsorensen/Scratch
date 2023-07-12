@@ -14,40 +14,43 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Local constant memory (look-up table)
 
-// Table is scaled and offset log2 gain curve
-static const frac16_t NR_GainTable[32] = {
--0.931843267,
--0.925674555,
--0.918947528,
--0.911611652,
--0.903611823,
--0.894887948,
--0.885374495,
--0.875,
--0.863686533,
--0.851349111,
--0.837895056,
--0.823223305,
--0.807223647,
--0.789775896,
--0.770748989,
--0.75,
--0.727373067,
--0.702698221,
--0.675790111,
--0.646446609,
--0.614447294,
--0.579551792,
--0.541497978,
--0.5,
--0.454746134,
--0.405396442,
--0.351580223,
--0.292893219,
--0.228894587,
--0.159103585,
--0.082995957,
-0
+// Table is normalized gain curve in log2.
+// Input is SNR in log2, times 8 (so 0.125 log2 steps)
+// -1.0 --> max reduction (use -1 so we can get true full scale)
+// 0.0 --> min reduction (unity gain)
+static const frac24_t NR_NormalizedGainTable[NR_GAIN_TABLE_SIZE] = {
+-1.0,       // 0 log2 = 0 dB
+-1.0,       // 0.125 log2 = 0.75dB
+-1.0,
+-1.0,
+-1.0,           // 0.5 log2 = 3.01dB
+-0.905928125,
+-0.81185625,
+-0.717784375,
+-0.625,         // 1.0 log2 = 6.02dB
+-0.577964063,
+-0.530928125,
+-0.483892188,
+-0.4375,        // 1.5 log2 = 9.03dB
+-0.390464063,
+-0.343428125,
+-0.296392188,
+-0.25,          // 2.0 log2 = 12.04dB
+-0.19375,
+-0.1125,
+-0.053125,
+0.0,            // 2.5 log2 = 15.05dB
+0.0,
+0.0,
+0.0,
+0.0,            // 3.0 log2 = 18.06dB
+0.0,
+0.0,
+0.0,
+0.0,
+0.0,
+0.0,
+0               // 3.875 log2 = 23.33dB
 };
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -85,11 +88,7 @@ int24_t bin;
 frac16_t Diff;
 accum_t Acc;
 int24_t GainTableIndex;
-frac24_t GainTableFrac;
-frac16_t LowerGain;
-frac16_t UpperGain;
-frac16_t TableDiff;
-frac16_t GainTableOut;
+frac24_t GainScaleTableOut;
 frac16_t GainTarget;
 frac16_t GainDiff;
 
@@ -100,8 +99,7 @@ frac16_t GainDiff;
         // NoiseFastEst = NoiseFastTC*BinPower + (1-NoiseFastTC)*NoiseFastEst = NoiseFastTC*(BinPower - NoiseFastEst) + NoiseFastEst
         // Doing smoothing in log2 domain
             Diff = SYS.BinEnergyLog2[bin] - NR.NoiseFastEst[bin];
-            Acc = Diff * NR_Params.Persist.NoiseFastTC + NR.NoiseFastEst[bin];
-            NR.NoiseFastEst[bin] = rnd_sat16(Acc);
+            NR.NoiseFastEst[bin] = mul_rnd16(NR_Params.Persist.NoiseFastTC, Diff) + NR.NoiseFastEst[bin];
 
         // SlowEst: in linear = (1+NoiseSlowCoeff)*SlowEst = SlowEst + NoiseSlowCoeff*SlowEst
         // in log2:  log2(1+NoiseSlowCoeff) + log2(SlowEst); so just convert NoiseSlowCoeff to log2 domain and add
@@ -111,53 +109,27 @@ frac16_t GainDiff;
             NR.NoiseSlowEst[bin] = min16(NR.NoiseFastEst[bin], NR.NoiseSlowEst[bin]);
             NR.NoiseSlowEst[bin] = max16(NR.NoiseSlowEst[bin], NR_MIN_NOISE_ESTIMATE);  // Don't let noise est go too low
 
-        // SpeechEst = (1-SpeechTC)*BinPower + SpeechTC*SpeechEst = SpeechTC*(SpeechEst - BinPower) + BinPower
-            Diff = NR.SpeechEst[bin] - SYS.BinEnergyLog2[bin];
-            Acc = Diff * NR_SPEECH_COEFF + SYS.BinEnergyLog2[bin];
-            NR.SpeechEst[bin] = rnd_sat16(Acc);
+        // SpeechEst = SpeechTC*BinPower + (1-SpeechTC)*SpeechEst = SpeechTC*(BinPower - SpeechEst) + SpeechEst
+            Diff = SYS.BinEnergyLog2[bin] - NR.SpeechEst[bin];
+            NR.SpeechEst[bin] = mul_rnd16(NR_Params.Persist.SpeechTC, Diff) + NR.SpeechEst[bin];
 
         //  SNR = log2(SpeechEst) - log2(NoiseEst);
 
             NR.SNREst[bin] = NR.SpeechEst[bin] - NR.NoiseSlowEst[bin];
 
-            //  GainTableIndex = floor((SNR - LowerLimit) * UpperLimit);
-            //  GainTableIndex = max(GainTableIndex,0);
-            //  GainTableIndex = min(GainTableIndex,31);
-            // LowerLimit and UpperLimit are fixed values
-            // Linearly interpolate between gain table entries
-            // take (table output + linear interpolation)*DeltaComp ==> gain
+        // Use SNR*8 (keep 3 fractional bits) as gain LUT input index.  Gain table output is 
+        // normalized on [-1.0, 0]; multiply this by the max reduction to get gain
+            Acc = NR.SNREst[bin];
+            GainTableIndex = upper_accum_to_i24(shr(Acc, 13));    // Remove 13 fractional bits, keep 3
+            GainTableIndex = maxint(GainTableIndex, 0);
+            GainTableIndex = minint(GainTableIndex,(NR_GAIN_TABLE_SIZE-1));
+            GainScaleTableOut = NR_NormalizedGainTable[GainTableIndex];
+            GainTarget = mul_rnd16(GainScaleTableOut, NR_Params.Profile.MaxReduction[bin]);      // Scale normalized table by max gain reduction
 
-    // TODO: The conversion needs to go directly from log2 SNR to log2 gain, AND needs to be much, much simpler;
-    // probably need to get rid of DeltaComp correction factor
-
-            Diff = NR.SNREst[bin] - NR_LOWER_LIMIT_GAIN_TABLE;
-            Acc = Diff * NR_UPPER_LIMIT_GAIN_TABLE;
-            Acc = shr(Acc, 9);      // effectively take floor(), integer part of product
-            GainTableIndex = (int24_t)upper_accum_to_f24(Acc);
-            if (GainTableIndex < 0)
-            {
-                GainTableOut = NR_GainTable[0];
-            } 
-            else if (GainTableIndex >= 31)
-            {
-                GainTableOut = NR_GainTable[31];
-            }
-            else
-            {
-                GainTableFrac = (frac24_t)lower_accum_to_f24(Acc);    // Cast as s0f24 unsigned
-                LowerGain = NR_GainTable[GainTableIndex];
-                UpperGain = NR_GainTable[GainTableIndex+1];
-            // Gain = LowerGain + (GainTableFrac * (UpperGain - LowerGain)) = GainTableFrac*UpperGain + (1-GainTableFrac)*LowerGain
-                TableDiff = UpperGain - LowerGain;
-                Acc = (TableDiff * GainTableFrac) + LowerGain;       // Auto adjust f24 to accum for add
-                GainTableOut = rnd_sat16(Acc);
-            }
-            Acc = (GainTableOut * NR_Params.Profile.MaxReduction[bin]) + GainTableOut;
-            GainTarget = rnd_sat16(Acc);
-
-            // Smooth the gain (in log2 domain)
+        // Smooth the gain (in log2 domain)
             GainDiff = GainTarget - NR.BinGainLog2[bin];
             NR.BinGainLog2[bin] = mul_rnd16(NR_Params.Persist.GainSmoothTC, GainDiff) + NR.BinGainLog2[bin];     // Single-pole smoothing filter to update gain
+
 
         } // for bin
 

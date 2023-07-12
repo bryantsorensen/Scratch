@@ -104,11 +104,11 @@ frac16_t ret;
     return ret;
 }
 
-inline int24_t upper_accum_to_f24(double a)
+inline int24_t upper_accum_to_i24(double a)
 {
-    double scale = pow(2.0, 16);
+    double scale = pow(2.0, 23);
     double b = a * scale;
-    int i = (int)b;
+    int24_t i = (int24_t)b;
     return i;
 }
 
@@ -120,7 +120,6 @@ inline frac24_t lower_accum_to_f24(double a)
     b = b - (double)i;      // remove integer part
     return b;
 }
-
 
 // Shift left
 inline accum_t shl(accum_t a, unsigned sh)
@@ -152,7 +151,7 @@ accum_t ret;
 }
 
 
-inline frac16_t mul_rnd16(frac16_t a, frac16_t b)
+inline frac16_t mul_rnd16(frac24_t a, frac16_t b)
 {
 frac16_t ret;
 
@@ -234,6 +233,19 @@ frac24_t ret;
     return ret;
 }
 
+inline int24_t maxint(int24_t a, int24_t b)
+{
+int24_t ret;
+    ret = (a > b) ? a : b;
+    return ret;
+}
+
+inline int24_t minint(int24_t a, int24_t b)
+{
+int24_t ret;
+    ret = (a < b) ? a : b;
+    return ret;
+}
 
 inline frac48_t dualTC_Smooth_48 (frac48_t Inp, frac48_t Prev, int24_t ATC, int24_t RTC)
 {

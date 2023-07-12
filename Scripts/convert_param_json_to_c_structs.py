@@ -62,7 +62,10 @@ for file in os.listdir(param_json_dir):
                     if (pvals['FractBits'] == 0):
                         ptype = 'int24_t '
                     else:
-                        ptype = 'frac24_t'
+                        if (pvals['FractBits'] == 23):
+                            ptype = 'frac24_t'
+                        else:
+                            ptype = 'frac' + str(pvals['FractBits']) + '_t'
                     NumElements = pvals['Elements']
                     if NumElements != 1:    # If array, Elements is not 1, so tack onto end of param declaration
                         if isinstance(NumElements, int):    # if element value is integer, convert to string

@@ -193,8 +193,9 @@
 	},
 	"NR": {
 		"0": {
-			"NoiseFastTC": 200.0,
+			"NoiseFastTC": 300.0,
 			"NoiseSlowCoeff": 8.0,
+			"SpeechTC": 8.0,
 			"GainSmoothTC": 500.0
 		},
 		"1": {

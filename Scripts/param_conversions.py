@@ -108,12 +108,6 @@ def convert_param_from_user_to_fw(userval, param_def_info, def_param_name):
                 fwmax = 1.0 - math.exp(-1.0/(tc_in_sec*NR_UPDATE_RATE))
                 tc_in_sec = usermin/1000.0
                 fwmin = 1.0 - math.exp(-1.0/(tc_in_sec*NR_UPDATE_RATE))
-        elif convert_val == 'NRMaxReduce':
-        # Calc in code: fw_value*GainTableOut + GainTableOut = GainTableOut*(1+fw_value)
-            fw_value = ((userval*DB20_TO_LOG2)/NR_GAIN_LUT_MIN) - 1.0       # Remove 1.0 to get fw_value on [0, 1.0)
-            if NeedFwLimits:
-                fwmax = ((usermax*DB20_TO_LOG2)/NR_GAIN_LUT_MIN) - 1.0
-                fwmin = ((usermin*DB20_TO_LOG2)/NR_GAIN_LUT_MIN) - 1.0
         elif convert_val == 'dBperSec_to_log2':
             fw_value = userval/(NR_UPDATE_RATE*LOG2_TO_DB20)
             if NeedFwLimits:

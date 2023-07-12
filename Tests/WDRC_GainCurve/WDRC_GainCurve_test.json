@@ -195,6 +195,7 @@
 		"0": {
 			"NoiseFastTC": 100.0,
 			"NoiseSlowCoeff": 8.0,
+			"SpeechTC": 50.0,
 			"GainSmoothTC": 250.0
 		},
 		"1": {

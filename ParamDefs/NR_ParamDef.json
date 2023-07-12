@@ -23,6 +23,17 @@
 				"FractBits": 16,
 				"DSPConvert": "dBperSec_to_log2"
 			},
+			"SpeechTC": {
+				"Description": "NR Speech estimate time constant",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "ms",
+				"UserMax": 10000,
+				"UserMin": 0.001,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": "NrTC"
+			},
 			"GainSmoothTC": {
 				"Description": "NR Gain Smoothing Time Constant",
 				"UserVisible": 1,
@@ -56,7 +67,7 @@
 				"UserMin": -64.0,
 				"List": "",
 				"FractBits": 16,
-				"DSPConvert": "NRMaxReduce"
+				"DSPConvert": -0.166096404744368
 			}
 		}
 	}
