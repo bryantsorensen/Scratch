@@ -15,8 +15,9 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Defines
 
-#define     NR_INITIAL_SPEECH_ESTIMATE  to_frac16(-5.0)
-#define     NR_INITIAL_NOISE_ESTIMATE   to_frac16(-5.0)
+#define     NR_INITIAL_SPEECH_ESTIMATE  to_frac16(-15.0)
+#define     NR_INITIAL_NOISE_ESTIMATE   to_frac16(-15.0)
+#define     NR_INITIAL_NOISE_ESTIMATE   to_frac16(-15.0)
 #define     NR_MIN_NOISE_ESTIMATE       to_frac16(-30.0)
 #define     NR_INITIAL_SNR              (NR_INITIAL_SPEECH_ESTIMATE - NR_INITIAL_NOISE_ESTIMATE)
 #define     NR_GAIN_TABLE_SIZE          32

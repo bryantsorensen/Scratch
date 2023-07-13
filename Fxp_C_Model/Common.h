@@ -301,7 +301,6 @@ int24_t TC;
 #define     WOLA_WINDOW_TYPE        WOLA_WINDOW_DEFAULT
 
 #define     BITREV_SHIFT            (WOLA_MAX_SIZE_LOG2 - WOLA_LOG2_N)
-#define     WDRC_RESERVE_GAIN       to_frac16(-7.0)
 
 #define     WDRC_NUM_CHANNELS       8
 

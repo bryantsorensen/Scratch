@@ -17,7 +17,7 @@
 				"UserVisible": 1,
 				"Elements": 1,
 				"UserUnits": "dB/s",
-				"UserMax": 18.0,
+				"UserMax": 100.0,
 				"UserMin": 0.5,
 				"List": "",
 				"FractBits": 16,
