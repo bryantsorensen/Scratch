@@ -200,6 +200,7 @@ frac16_t BbGainLog2;
 frac24_t TC;
 frac16_t Diff;
 frac16_t LevelLog2;
+frac16_t ThreshDiff;
 
     for (i = 0; i < BLOCK_SIZE; i++)
     {
@@ -208,10 +209,11 @@ frac16_t LevelLog2;
         Diff = LevelLog2 - SYS.AgcoLevelLog2;
         TC = (Diff > 0) ? AGCO_ATK_TC : AGCO_REL_TC;
         SYS.AgcoLevelLog2 = rnd_sat24(TC*Diff) + SYS.AgcoLevelLog2;
-        if ((SYS.AgcoLevelLog2+BbGainLog2) > SYS_Params.Persist.AgcoThresh)
+        ThreshDiff = SYS_Params.Persist.AgcoThresh - SYS.AgcoLevelLog2;
+        if (BbGainLog2 > ThreshDiff)  // if ((SYS.AgcoLevelLog2+BbGainLog2) > SYS_Params.Persist.AgcoThresh); if proposed level exceeds threshold
         // If the result of applying all the gains is going to exceed threshold
         // then apply as much as possible = the amount of gain that will take level to thresh
-            SYS.AgcoGainLog2 = SYS_Params.Persist.AgcoThresh - SYS.AgcoLevelLog2;
+            SYS.AgcoGainLog2 = ThreshDiff;
         else
             SYS.AgcoGainLog2 = BbGainLog2;      // Otherwise apply all the gain possible
         SYS.OutBuf[i] = mult_log2(SYS.FwdSynOut[i], SYS.AgcoGainLog2);

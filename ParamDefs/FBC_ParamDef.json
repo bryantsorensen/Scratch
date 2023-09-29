@@ -37,7 +37,7 @@
 			"MuOffset": {
 				"Description": "Offset per bin for mu adapt speed. Make larger to slow down adaptation for that bin.",
 				"UserVisible": 0,
-				"Elements": 64,
+				"Elements": "[WOLA_DEF_NUM_BINS]",
 				"UserUnits": "",
 				"UserMax": 23,
 				"UserMin": 0,
@@ -129,8 +129,8 @@
 				"UserVisible": 1,
 				"Elements": 1,
 				"UserUnits": "dB",
-				"UserMax": 30.0,
-				"UserMin": -30.0,
+				"UserMax": 42.1442,
+				"UserMin": -42.1442,
 				"List": "",
 				"FractBits": 16,
 				"DSPConvert": 0.166096404744368				

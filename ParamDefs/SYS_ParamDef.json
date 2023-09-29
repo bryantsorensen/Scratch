@@ -4,7 +4,7 @@
 			"InpMicGain": {
 				"Description": "Input Microphone calibration digital gain",
 				"UserVisible": 1,
-				"Elements": 1,
+				"Elements": 2,
 				"UserUnits": "dB",
 				"UserMax": 63.999,
 				"UserMin": -64.0,
@@ -33,7 +33,95 @@
 				"List": "",
 				"FractBits": 16,
 				"DSPConvert": 0.166096404744368
-			}				
+			},
+			"RampGainStep": {
+				"Description": "Ramping gain step for going into / out of mute; updates at subband rate",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "dB",
+				"UserMax": 63.999,
+				"UserMin": 0.0,
+				"List": "",
+				"FractBits": 16,
+				"DSPConvert": 0.166096404744368
+			},
+			"UserProgram": {
+				"Description": "(Starting) User Memory / Program; updated in NVM whenever user changes program",
+				"UserVisible": 1,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 7,
+				"UserMin": 0,
+				"List": "",
+				"FractBits": 0,
+				"DSPConvert": 1
+			},
+			"MixRampStep": {
+				"Description": "Ramping gain step for mixing generated audio; updates at subband rate",
+				"UserVisible": 0,
+				"Elements": 1,
+				"UserUnits": "",
+				"UserMax": 1.0,
+				"UserMin": 0.0,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": 1
+			},
+			"ToneAval": {
+				"Description": "Tone a_val = cos(2.0*pi*freq/fsamp). Multiplied by 2 when sent to FENG",
+				"UserVisible": 1,
+				"Elements": 16,
+				"UserUnits": "",
+				"UserMax": 1.0,
+				"UserMin": -1.0,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": 1
+			},
+			"ToneBval": {
+				"Description": "Tone b_val = ampl*sin(2.0*pi*freq/fsamp)",
+				"UserVisible": 1,
+				"Elements": 16,
+				"UserUnits": "",
+				"UserMax": 1.0,
+				"UserMin": -1.0,
+				"List": "",
+				"FractBits": 23,
+				"DSPConvert": 1
+			},
+			"ToneOnCount": {
+				"Description": "Tone 'ON' time",
+				"UserVisible": 1,
+				"Elements": 16,
+				"UserUnits": "sec",
+				"UserMax": 10.0,
+				"UserMin": 0.0,
+				"List": "",
+				"FractBits": 0,
+				"DSPConvert": "(1.0/SB_SAMPLE_RATE)"
+			},
+			"ToneOffCount": {
+				"Description": "Tone 'OFF' time",
+				"UserVisible": 1,
+				"Elements": 16,
+				"UserUnits": "sec",
+				"UserMax": 10.0,
+				"UserMin": 0.0,
+				"List": "",
+				"FractBits": 0,
+				"DSPConvert": "(1.0/SB_SAMPLE_RATE)"
+			},
+			"ToneRepeats": {
+				"Description": "Tone number of repeats",
+				"UserVisible": 1,
+				"Elements": 16,
+				"UserUnits": "",
+				"UserMax": 100,
+				"UserMin": 0,
+				"List": "",
+				"FractBits": 0,
+				"DSPConvert": 1
+			}
 		},
 		"Profile": {
 			"AgcoGain": {

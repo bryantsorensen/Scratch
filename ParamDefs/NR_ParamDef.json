@@ -61,7 +61,7 @@
 			"MaxReduction": {
 				"Description": "NR gain reduction maximum per bin (more negative --> more reduction)",
 				"UserVisible": 1,
-				"Elements": "WOLA_NUM_BINS",
+				"Elements": "[WOLA_DEF_NUM_BINS]",
 				"UserUnits": "dB",
 				"UserMax": 0.0,
 				"UserMin": -64.0,

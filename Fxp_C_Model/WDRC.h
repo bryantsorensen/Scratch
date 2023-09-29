@@ -93,5 +93,5 @@ struct strWDRC
 void WDRC_Init();
 void WDRC_Main();
 
-#endif _WDRC_H
+#endif //_WDRC_H
 
