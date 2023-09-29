@@ -19,7 +19,7 @@ void SYS_Init()
 int24_t i;
 int24_t tap;
 
-    SYS.MicCalGainLog2 = SYS_Params.Persist.InpMicGain;     // TODO: If we need to ramp gain, do it using this SYS variable
+    SYS.MicCalGainLog2 = SYS_Params.Persist.InpMicGain[0];     // TODO: If we need to ramp gain, do it using this SYS variable
 
     for (i = 0; i < BLOCK_SIZE; i++)
     {

@@ -33,7 +33,7 @@ Not sure we should consider VC; assume we put it in the target as high, and late
 we would slow down adaptation all the time.  Also, if we use it in target as unity, then it gets turned up,
 then we could miss gains that are turned down as it swamps their negative gain (is this a bad thing?)
 */
-    BbTargetGainLog2 = SYS_Params.Persist.InpMicGain + SYS_Params.Profile.AgcoGain;
+    BbTargetGainLog2 = SYS_Params.Persist.InpMicGain[0] + SYS_Params.Profile.AgcoGain;
     for (CurCh = 0; CurCh < WDRC_NUM_CHANNELS; CurCh++)
     {
     // Don't include NR; it is unity by default at reset or rest
